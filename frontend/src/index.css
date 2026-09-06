@@ -1,0 +1,12 @@
+/* 全局基础 reset（对齐 antd 官方 reset.css 的最小集）：
+   此前项目无任何 reset，body 保留 UA 默认 margin: 8px 与 content-box，
+   任何 min-height: 100vh 的整页布局都会叠出纵向滚动条。 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}

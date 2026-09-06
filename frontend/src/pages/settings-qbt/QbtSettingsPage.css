@@ -1,0 +1,29 @@
+/* 服务器列表项：名称 + 悬停显示的删除图标 */
+.server-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.server-menu-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.server-menu-item .server-delete-icon {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ant-menu-item:hover .server-delete-icon {
+  opacity: 1;
+}
+
+.server-delete-icon:hover {
+  color: var(--ant-color-error, #ff4d4f);
+}

@@ -1,0 +1,9 @@
+# 开发者覆盖文件：为两个服务补回本地构建配置。
+# 用法（与主 compose 叠加）：
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+# 构建出的镜像在本机打 tag 为 ghcr.io/ant-torrent/…（仅本地标签，不会推送）。
+services:
+  backend:
+    build: ./backend              # 构建上下文 = backend/（Go module 根在 backend/，目录自包含）
+  webui:
+    build: ./frontend

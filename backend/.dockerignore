@@ -1,0 +1,12 @@
+# 运行时数据（含 qB 凭据与 agentToken，严禁进入构建上下文）
+data/
+
+# 本地杂物
+.idea/
+.claude/
+*.log
+*.exe
+
+# 文档对构建无意义
+CLAUDE.md
+README.md

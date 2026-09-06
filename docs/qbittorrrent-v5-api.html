@@ -1,0 +1,2877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>qBittorrent WebUI API 文档 (v5.0+)</title>
+<style>
+  :root{
+    --bg:#0a0e17;
+    --bg2:#0c1220;
+    --panel:#111a2c;
+    --panel2:#15213a;
+    --card:#0f1728;
+    --card2:#131d33;
+    --border:#1d2a44;
+    --border2:#2a3c60;
+    --text:#e6edf7;
+    --dim:#97a6c4;
+    --faint:#5f7194;
+    --accent:#4da3ff;
+    --accent2:#7cc0ff;
+    --get:#2fd07e;
+    --post:#5b8dff;
+    --warn:#f5a623;
+    --err:#ff6b6b;
+    --code-bg:#0a101d;
+    --radius:12px;
+    --sidebar-w:300px;
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+    --mono: "SF Mono",SFMono-Regular,ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font);
+    font-size:15px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(77,163,255,.3)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#24344f;border-radius:6px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:#31446b}
+
+  /* progress bar */
+  #progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:100;transition:width .1s linear}
+
+  /* ---------- sidebar ---------- */
+  #sidebar{
+    position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);
+    background:var(--bg2);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;z-index:50;
+  }
+  .brand{padding:20px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .brand .logo{display:flex;align-items:center;gap:10px}
+  .brand .logo-badge{
+    width:34px;height:34px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(135deg,#2b6cff,#4da3ff);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:16px;color:#fff;box-shadow:0 4px 14px rgba(77,163,255,.35);
+  }
+  .brand h1{font-size:15px;font-weight:700;letter-spacing:.2px;line-height:1.35}
+  .brand .sub{font-size:11.5px;color:var(--dim);margin-top:2px}
+  .brand .ver{display:inline-flex;margin-top:8px;gap:6px}
+  .brand .ver span{
+    font-size:10.5px;padding:2px 8px;border-radius:20px;border:1px solid var(--border2);
+    color:var(--accent2);background:rgba(77,163,255,.08);font-family:var(--mono);
+  }
+  #search-wrap{padding:14px 16px 6px;flex-shrink:0}
+  #search{
+    width:100%;padding:9px 12px 9px 34px;border-radius:9px;
+    background:#0b1220;border:1px solid var(--border);color:var(--text);
+    font-size:13.5px;outline:none;transition:border-color .2s,box-shadow .2s;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%235f7194' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:11px center;
+  }
+  #search:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(77,163,255,.15)}
+  #search::placeholder{color:var(--faint)}
+  .search-meta{font-size:11px;color:var(--faint);padding:4px 4px 0;min-height:18px;display:block}
+  #nav{flex:1;overflow-y:auto;padding:8px 10px 24px}
+  #nav::-webkit-scrollbar{width:8px}
+  .nav-group{margin-bottom:6px}
+  .nav-group > summary{
+    list-style:none;cursor:pointer;user-select:none;
+    display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+    font-size:12.5px;font-weight:700;color:var(--dim);letter-spacing:.4px;text-transform:uppercase;
+    transition:background .15s,color .15s;
+  }
+  .nav-group > summary::-webkit-details-marker{display:none}
+  .nav-group > summary:hover{background:rgba(255,255,255,.03);color:var(--text)}
+  .nav-group > summary .caret{margin-left:auto;font-size:10px;color:var(--faint);transition:transform .2s}
+  .nav-group[open] > summary .caret{transform:rotate(90deg)}
+  .nav-group > summary .cnt{
+    font-size:10px;background:rgba(255,255,255,.06);color:var(--faint);
+    padding:1px 7px;border-radius:20px;font-family:var(--mono);text-transform:none;
+  }
+  .nav-items{padding:2px 0 6px}
+  .nav-item{
+    display:flex;align-items:center;gap:8px;padding:5px 10px 5px 14px;border-radius:7px;
+    font-size:13px;color:var(--dim);cursor:pointer;text-decoration:none;
+    transition:background .15s,color .15s;border-left:2px solid transparent;
+  }
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+  .nav-item.active{background:rgba(77,163,255,.12);color:var(--text);border-left-color:var(--accent)}
+  .nav-item .m{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .nav-item .m.get{background:var(--get)}
+  .nav-item .m.post{background:var(--post)}
+  .nav-item .nm{font-family:var(--mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-item.hide{display:none}
+  .nav-group.hide{display:none}
+  .ep.hide{display:none}
+  .nav-empty{display:none;padding:20px 10px;text-align:center;color:var(--faint);font-size:13px}
+  .nav-empty.show{display:block}
+
+  /* ---------- main ---------- */
+  #main{margin-left:var(--sidebar-w);padding:0 34px 120px;max-width:1080px}
+  @media(min-width:1500px){#main{max-width:1180px}}
+  .hero{padding:44px 0 26px;border-bottom:1px solid var(--border);margin-bottom:36px}
+  .hero .tagline{color:var(--accent2);font-weight:600;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .hero h2{font-size:32px;font-weight:800;letter-spacing:-.5px;line-height:1.25;
+    background:linear-gradient(120deg,#fff,var(--accent2));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p.desc{color:var(--dim);margin-top:12px;max-width:760px;font-size:15px}
+  .hero .stats{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .stat{
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:12px 18px;min-width:120px;
+  }
+  .stat b{display:block;font-size:22px;font-weight:800;color:var(--text);font-family:var(--mono)}
+  .stat span{font-size:12px;color:var(--dim)}
+  .hero .src{margin-top:16px;font-size:12.5px}
+  .hero .src a{color:var(--accent);text-decoration:none}
+  .hero .src a:hover{text-decoration:underline}
+
+  .section{margin-bottom:48px;scroll-margin-top:24px}
+  .sec-head{display:flex;align-items:center;gap:14px;margin-bottom:6px;scroll-margin-top:24px}
+  .sec-head .num{
+    font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);
+    background:rgba(77,163,255,.1);border:1px solid rgba(77,163,255,.3);
+    padding:3px 10px;border-radius:7px;flex-shrink:0;
+  }
+  .sec-head h3{font-size:22px;font-weight:800;letter-spacing:-.3px}
+  .sec-head .en{color:var(--faint);font-weight:600;font-size:14px}
+  .sec-intro{color:var(--dim);font-size:13.5px;margin:0 0 20px;padding-left:0}
+  .sec-intro code{font-family:var(--mono);color:var(--accent2);background:rgba(77,163,255,.08);padding:1px 6px;border-radius:5px;font-size:12.5px}
+
+  /* endpoint card */
+  .ep{
+    background:linear-gradient(180deg,var(--card2),var(--card));
+    border:1px solid var(--border);border-radius:var(--radius);
+    margin-bottom:20px;overflow:hidden;scroll-margin-top:20px;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .ep:hover{border-color:var(--border2)}
+  .ep.active-card{box-shadow:0 0 0 2px rgba(77,163,255,.45),0 10px 40px -12px rgba(77,163,255,.25)}
+  .ep-head{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:14px 18px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);
+  }
+  .method{
+    font-family:var(--mono);font-weight:800;font-size:11.5px;letter-spacing:.8px;
+    padding:3px 10px;border-radius:6px;flex-shrink:0;
+  }
+  .method.get{color:var(--get);background:rgba(47,208,126,.13);border:1px solid rgba(47,208,126,.35)}
+  .method.post{color:var(--post);background:rgba(91,141,255,.13);border:1px solid rgba(91,141,255,.35)}
+  .ep-path{
+    font-family:var(--mono);font-size:13.5px;color:var(--accent2);
+    background:rgba(77,163,255,.07);padding:5px 12px;border-radius:7px;
+    word-break:break-all;
+  }
+  .ep-head .spacer{flex:1}
+  .icon-btn{
+    background:transparent;border:1px solid var(--border);color:var(--dim);
+    width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;line-height:1;
+    display:inline-flex;align-items:center;justify-content:center;transition:all .15s;
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--border2);background:rgba(255,255,255,.04)}
+  .icon-btn:active{transform:scale(.94)}
+  .ep-body{padding:18px}
+  .ep-title{font-size:16.5px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ep-title .name-pill{font-family:var(--mono);font-size:12px;color:var(--dim);background:rgba(255,255,255,.05);padding:2px 10px;border-radius:20px}
+  .ep-desc{color:var(--dim);font-size:14px;margin-bottom:16px}
+  .ep-desc code{font-family:var(--mono);color:var(--accent2);background:rgba(77,163,255,.08);padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .ep-desc a{color:var(--accent);text-decoration:none}
+  .ep-desc a:hover{text-decoration:underline}
+
+  .block{margin-top:16px}
+  .block-tag{
+    font-size:11.5px;font-weight:700;letter-spacing:.5px;color:var(--dim);
+    display:flex;align-items:center;gap:7px;margin-bottom:8px;text-transform:uppercase;
+  }
+  .block-tag::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
+  .no-param{
+    display:inline-block;font-size:12px;color:var(--faint);
+    border:1px dashed var(--border2);border-radius:6px;padding:3px 12px;font-family:var(--mono);
+  }
+  table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+  table.tbl th{
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--faint);padding:8px 12px;border-bottom:1px solid var(--border2);
+    background:rgba(255,255,255,.02);white-space:nowrap;
+  }
+  table.tbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text)}
+  table.tbl tr:last-child td{border-bottom:none}
+  table.tbl tr:hover td{background:rgba(255,255,255,.02)}
+  table.tbl td code,.tbl-name{font-family:var(--mono);font-size:12.5px;color:var(--accent2);word-break:break-all}
+  .type-pill{
+    font-family:var(--mono);font-size:11px;color:var(--warn);
+    background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);
+    padding:1px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .opt-tag{
+    font-size:10.5px;color:var(--faint);background:rgba(255,255,255,.05);
+    padding:1px 7px;border-radius:4px;margin-left:6px;font-family:var(--mono);vertical-align:middle;
+  }
+  .since-tag{font-size:10.5px;color:var(--accent2);background:rgba(77,163,255,.1);padding:1px 7px;border-radius:4px;margin-left:6px;font-family:var(--mono);vertical-align:middle}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    font-family:var(--mono);font-size:12px;padding:4px 11px;border-radius:20px;
+    border:1px solid var(--border2);color:var(--dim);background:var(--panel);
+  }
+  .chip b{font-weight:700;margin-right:6px}
+  .chip.ok{color:var(--get);border-color:rgba(47,208,126,.4);background:rgba(47,208,126,.07)}
+  .chip.err{color:var(--err);border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.07)}
+  .chip.conflict{color:var(--warn);border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.07)}
+  .chip.blue{color:var(--post);border-color:rgba(91,141,255,.4);background:rgba(91,141,255,.07)}
+
+  details.collapse{margin-top:14px}
+  details.collapse summary{
+    cursor:pointer;list-style:none;font-size:12.5px;font-weight:700;color:var(--dim);
+    display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:7px;
+    border:1px solid var(--border);background:var(--panel);transition:all .15s;
+  }
+  details.collapse summary::-webkit-details-marker{display:none}
+  details.collapse summary:hover{color:var(--text);border-color:var(--border2)}
+  details.collapse summary .arrow{transition:transform .2s;font-size:10px}
+  details.collapse[open] summary .arrow{transform:rotate(90deg)}
+  details.collapse summary .cnt{color:var(--faint);font-family:var(--mono);font-size:11px}
+  details.collapse .inner{margin-top:10px;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:rgba(255,255,255,.015)}
+  details.collapse .inner table{border:none}
+  details.collapse .inner table tr:last-child td{border-bottom:none}
+
+  /* code blocks */
+  .code-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:4px;background:var(--code-bg)}
+  .code-bar{
+    display:flex;align-items:center;gap:8px;padding:7px 12px;
+    background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);
+  }
+  .code-bar .dots{display:flex;gap:5px}
+  .code-bar .dots i{width:9px;height:9px;border-radius:50%;display:block}
+  .code-bar .dots i:nth-child(1){background:#ff5f57}
+  .code-bar .dots i:nth-child(2){background:#febc2e}
+  .code-bar .dots i:nth-child(3){background:#28c840}
+  .code-bar .lang{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.5px;text-transform:uppercase}
+  .code-bar .spacer{flex:1}
+  pre.code{
+    padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.8px;line-height:1.65;
+    color:#d7e2f5;tab-size:4;
+  }
+  pre.code::-webkit-scrollbar{height:8px}
+  .tok-key{color:#7cc0ff}
+  .tok-str{color:#9be29b}
+  .tok-num{color:#f2b15c}
+  .tok-bool{color:#c792ea}
+  .tok-null{color:#f07178}
+  .tok-punct{color:#5f7194}
+  .tok-cmd{color:#f2b15c}
+  .tok-flag{color:#c792ea}
+
+  .notes{margin-top:16px}
+  .notes ul{list-style:none}
+  .notes li{
+    position:relative;padding:8px 12px 8px 36px;margin-bottom:6px;
+    background:rgba(245,166,35,.05);border:1px solid rgba(245,166,35,.2);border-radius:8px;
+    color:var(--dim);font-size:13px;
+  }
+  .notes li::before{
+    content:"!";position:absolute;left:12px;top:8px;
+    width:16px;height:16px;border-radius:50%;background:rgba(245,166,35,.2);
+    color:var(--warn);font-size:11px;font-weight:800;text-align:center;line-height:16px;
+  }
+  .notes li code{font-family:var(--mono);color:var(--accent2);font-size:12px;background:rgba(77,163,255,.08);padding:1px 5px;border-radius:4px}
+  .resp-text{color:var(--dim);font-size:13.5px;margin-top:4px}
+  .resp-text code{font-family:var(--mono);color:var(--accent2);font-size:12.5px;background:rgba(77,163,255,.08);padding:1px 5px;border-radius:4px}
+
+  /* empty state */
+  #empty{display:none;text-align:center;padding:80px 20px;color:var(--faint)}
+  #empty.show{display:block}
+  #empty .big{font-size:40px;margin-bottom:10px}
+
+  /* back to top */
+  #toTop{
+    position:fixed;right:26px;bottom:26px;z-index:60;
+    width:44px;height:44px;border-radius:12px;cursor:pointer;
+    background:var(--panel2);border:1px solid var(--border2);color:var(--text);
+    font-size:18px;display:none;align-items:center;justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);transition:all .2s;
+  }
+  #toTop:hover{background:#1c2b4a;transform:translateY(-2px)}
+  #toTop.show{display:flex}
+
+  /* toast */
+  #toast{
+    position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+    background:var(--panel2);border:1px solid var(--border2);color:var(--text);
+    padding:10px 22px;border-radius:10px;font-size:13.5px;z-index:200;
+    opacity:0;pointer-events:none;transition:all .25s;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* hamburger */
+  #hamburger{
+    display:none;position:fixed;top:14px;left:14px;z-index:80;
+    width:40px;height:40px;border-radius:10px;border:1px solid var(--border2);
+    background:var(--panel2);color:var(--text);font-size:18px;cursor:pointer;
+    align-items:center;justify-content:center;
+  }
+  #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40}
+
+  /* footer */
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);color:var(--faint);font-size:12.5px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+  .foot a{color:var(--accent);text-decoration:none}
+  .foot a:hover{text-decoration:underline}
+
+  /* responsive */
+  @media(max-width:980px){
+    #sidebar{transform:translateX(-105%);transition:transform .25s}
+    #sidebar.open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.5)}
+    #main{margin-left:0;padding:0 18px 100px}
+    #hamburger{display:flex}
+    #overlay.show{display:block}
+    .hero h2{font-size:25px}
+  }
+  @media(max-width:560px){
+    .ep-head{padding:12px}
+    .ep-path{font-size:12px}
+    table.tbl th,table.tbl td{padding:7px 9px}
+    .stat{min-width:calc(50% - 6px)}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button id="hamburger" aria-label="菜单">☰</button>
+<div id="overlay"></div>
+
+<aside id="sidebar">
+  <div class="brand">
+    <div class="logo">
+      <div class="logo-badge">qB</div>
+      <div>
+        <h1>qBittorrent WebUI API</h1>
+        <div class="sub">接口文档 · 单页导航版</div>
+      </div>
+    </div>
+    <div class="ver"><span>v5.0+</span><span>API 2.11.x</span></div>
+  </div>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="搜索接口名称 / 路径 / 描述…  ( / )" autocomplete="off" spellcheck="false">
+    <span class="search-meta" id="searchMeta"></span>
+  </div>
+  <nav id="nav"></nav>
+</aside>
+
+<div id="main">
+  <header class="hero">
+    <div class="tagline">qBittorrent WebUI API Reference</div>
+    <h2>qBittorrent WebUI API 文档</h2>
+    <p class="desc">本页面将 GitHub Wiki 中的《WebUI API (qBittorrent 5.0)》转换为结构化、可搜索、可跳转的单页接口文档。包含全部 API 的分组导航、请求参数、返回字段、状态码与示例。左侧导航可展开折叠、实时搜索，点击任意接口即可快速定位。</p>
+    <div class="stats" id="stats"></div>
+    <div class="src">📄 内容来源：<a href="https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-5.0)" target="_blank" rel="noopener">github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-5.0)</a></div>
+  </header>
+  <div id="content"></div>
+  <div id="empty"><div class="big">🔍</div>没有匹配的接口<br><span style="font-size:13px">试试其他关键词，例如 “hash”、“login”、“torrents”</span></div>
+  <footer class="foot">
+    <span>qBittorrent WebUI API 文档 · 适用于 qBittorrent v5.0+</span>
+    <span>Generated from <a href="https://github.com/qbittorrent/qBittorrent/wiki" target="_blank" rel="noopener">qBittorrent Wiki</a></span>
+  </footer>
+</div>
+
+<button id="toTop" title="回到顶部">↑</button>
+<div id="toast">已复制</div>
+
+<script>
+"use strict";
+/* ============================ 文档数据 ============================ */
+const DOC = [
+  /* ---------- AUTH ---------- */
+  {
+    slug:"auth", title:"认证", en:"Authentication",
+    intro:"所有认证接口位于 `auth` 分组下，例如 `/api/v2/auth/methodName`。qBittorrent 采用基于 Cookie 的认证机制（SID）。",
+    endpoints:[
+      {
+        id:"auth-login", method:"POST", name:"login", title:"登录",
+        desc:"使用用户名和密码登录。成功后响应会返回包含 SID 的 Cookie，之后所有需要认证的操作都必须携带该 Cookie。",
+        params:[
+          {name:"username", type:"string", req:true, desc:"Username used to access the WebUI"},
+          {name:"password", type:"string", req:true, desc:"Password used to access the WebUI"}
+        ],
+        returns:[
+          {code:403, cls:"err", desc:"User's IP is banned for too many failed login attempts"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        notes:[
+          "Upon success, the response will contain a cookie with your SID. You must supply the cookie whenever you want to perform an operation that requires authentication.",
+          "Set `Referer` or `Origin` header to the exact same domain and port as used in the HTTP query `Host` header."
+        ],
+        examples:[
+          {lang:"bash", code:String.raw`$ curl -i --header 'Referer: http://localhost:8080' --data 'username=admin&password=adminadmin' http://localhost:8080/api/v2/auth/login
+HTTP/1.1 200 OK
+Content-Encoding:
+Content-Length: 3
+Content-Type: text/plain; charset=UTF-8
+Set-Cookie: SID=hBc7TxF76ERhvIw0jQQ4LZ7Z1jQUV0tQ; path=/
+$ curl http://localhost:8080/api/v2/torrents/info --cookie "SID=hBc7TxF76ERhvIw0jQQ4LZ7Z1jQUV0tQ"`}
+        ]
+      },
+      {
+        id:"auth-logout", method:"POST", name:"logout", title:"注销",
+        desc:"注销当前会话，使 SID Cookie 失效。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      }
+    ]
+  },
+
+  /* ---------- APP ---------- */
+  {
+    slug:"app", title:"应用", en:"Application",
+    intro:"所有应用接口位于 `app` 分组下，例如 `/api/v2/app/methodName`。",
+    endpoints:[
+      {
+        id:"app-version", method:"GET", name:"version", title:"获取应用版本",
+        desc:"返回应用版本字符串。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回应用版本字符串，例如 `v4.1.3`。"
+      },
+      {
+        id:"app-webapiversion", method:"GET", name:"webapiVersion", title:"获取 API 版本",
+        desc:"返回 WebAPI 版本字符串。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回 WebAPI 版本字符串，例如 `2.0`。"
+      },
+      {
+        id:"app-buildinfo", method:"GET", name:"buildInfo", title:"获取构建信息",
+        desc:"返回构建信息 JSON 对象。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"qt", type:"string", desc:"QT version"},
+          {name:"libtorrent", type:"string", desc:"libtorrent version"},
+          {name:"boost", type:"string", desc:"Boost version"},
+          {name:"openssl", type:"string", desc:"OpenSSL version"},
+          {name:"bitness", type:"int", desc:"Application bitness (e.g. 64-bit)"}
+        ]
+      },
+      {
+        id:"app-shutdown", method:"GET", name:"shutdown", title:"关闭应用",
+        desc:"关闭 qBittorrent 应用。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"app-preferences", method:"GET", name:"preferences", title:"获取应用偏好设置",
+        desc:"以键值对形式返回应用的设置项。具体内容可能随 qBittorrent.ini 中的配置而异。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fieldsCollapsed:true,
+        fields:[
+          {name:"locale", type:"string", desc:"Currently selected language (e.g. en_GB for English)"},
+          {name:"create_subfolder_enabled", type:"bool", desc:"True if a subfolder should be created when adding a torrent"},
+          {name:"start_paused_enabled", type:"bool", desc:"True if torrents should be added in a Paused state"},
+          {name:"auto_delete_mode", type:"integer", desc:"TODO"},
+          {name:"preallocate_all", type:"bool", desc:"True if disk space should be pre-allocated for all files"},
+          {name:"incomplete_files_ext", type:"bool", desc:`True if ".!qB" should be appended to incomplete files`},
+          {name:"auto_tmm_enabled", type:"bool", desc:"True if Automatic Torrent Management is enabled by default"},
+          {name:"torrent_changed_tmm_enabled", type:"bool", desc:"True if torrent should be relocated when its Category changes"},
+          {name:"save_path_changed_tmm_enabled", type:"bool", desc:"True if torrent should be relocated when the default save path changes"},
+          {name:"category_changed_tmm_enabled", type:"bool", desc:"True if torrent should be relocated when its Category's save path changes"},
+          {name:"save_path", type:"string", desc:"Default save path for torrents, separated by slashes"},
+          {name:"temp_path_enabled", type:"bool", desc:"True if folder for incomplete torrents is enabled"},
+          {name:"temp_path", type:"string", desc:"Path for incomplete torrents, separated by slashes"},
+          {name:"scan_dirs", type:"object", desc:"Property: directory to watch for torrent files, value: where torrents loaded from this directory should be downloaded to. Slashes are used as path separators; multiple key/value pairs can be specified"},
+          {name:"export_dir", type:"string", desc:"Path to directory to copy .torrent files to. Slashes are used as path separators"},
+          {name:"export_dir_fin", type:"string", desc:"Path to directory to copy .torrent files of completed downloads to. Slashes are used as path separators"},
+          {name:"mail_notification_enabled", type:"bool", desc:"True if e-mail notification should be enabled"},
+          {name:"mail_notification_sender", type:"string", desc:"e-mail where notifications should originate from"},
+          {name:"mail_notification_email", type:"string", desc:"e-mail to send notifications to"},
+          {name:"mail_notification_smtp", type:"string", desc:"smtp server for e-mail notifications"},
+          {name:"mail_notification_ssl_enabled", type:"bool", desc:"True if smtp server requires SSL connection"},
+          {name:"mail_notification_auth_enabled", type:"bool", desc:"True if smtp server requires authentication"},
+          {name:"mail_notification_username", type:"string", desc:"Username for smtp authentication"},
+          {name:"mail_notification_password", type:"string", desc:"Password for smtp authentication"},
+          {name:"autorun_enabled", type:"bool", desc:"True if external program should be run after torrent has finished downloading"},
+          {name:"autorun_program", type:"string", desc:"Program path/name/arguments to run if autorun_enabled is enabled; path is separated by slashes; `%f` and `%n` arguments expanded as path_to_torrent_file and torrent_name"},
+          {name:"queueing_enabled", type:"bool", desc:"True if torrent queuing is enabled"},
+          {name:"max_active_downloads", type:"integer", desc:"Maximum number of active simultaneous downloads"},
+          {name:"max_active_torrents", type:"integer", desc:"Maximum number of active simultaneous downloads and uploads"},
+          {name:"max_active_uploads", type:"integer", desc:"Maximum number of active simultaneous uploads"},
+          {name:"dont_count_slow_torrents", type:"bool", desc:"If true torrents w/o any activity (stalled ones) will not be counted towards max_active_* limits"},
+          {name:"slow_torrent_dl_rate_threshold", type:"integer", desc:"Download rate in KiB/s for a torrent to be considered \"slow\""},
+          {name:"slow_torrent_ul_rate_threshold", type:"integer", desc:"Upload rate in KiB/s for a torrent to be considered \"slow\""},
+          {name:"slow_torrent_inactive_timer", type:"integer", desc:"Seconds a torrent should be inactive before considered \"slow\""},
+          {name:"max_ratio_enabled", type:"bool", desc:"True if share ratio limit is enabled"},
+          {name:"max_ratio", type:"float", desc:"Get the global share ratio limit"},
+          {name:"max_ratio_act", type:"integer", desc:"Action performed when a torrent reaches the maximum share ratio"},
+          {name:"listen_port", type:"integer", desc:"Port for incoming connections"},
+          {name:"upnp", type:"bool", desc:"True if UPnP/NAT-PMP is enabled"},
+          {name:"random_port", type:"bool", desc:"True if the port is randomly selected"},
+          {name:"dl_limit", type:"integer", desc:"Global download speed limit in KiB/s; -1 means no limit is applied"},
+          {name:"up_limit", type:"integer", desc:"Global upload speed limit in KiB/s; -1 means no limit is applied"},
+          {name:"max_connec", type:"integer", desc:"Maximum global number of simultaneous connections"},
+          {name:"max_connec_per_torrent", type:"integer", desc:"Maximum number of simultaneous connections per torrent"},
+          {name:"max_uploads", type:"integer", desc:"Maximum number of upload slots"},
+          {name:"max_uploads_per_torrent", type:"integer", desc:"Maximum number of upload slots per torrent"},
+          {name:"stop_tracker_timeout", type:"integer", desc:"Timeout in seconds for a stopped announce request to trackers"},
+          {name:"enable_piece_extent_affinity", type:"bool", desc:"True if the advanced libtorrent option piece_extent_affinity is enabled"},
+          {name:"bittorrent_protocol", type:"integer", desc:"Bittorrent Protocol to use"},
+          {name:"limit_utp_rate", type:"bool", desc:"True if [du]l_limit should be applied to uTP connections"},
+          {name:"limit_tcp_overhead", type:"bool", desc:"True if [du]l_limit should be applied to estimated TCP overhead"},
+          {name:"limit_lan_peers", type:"bool", desc:"True if [du]l_limit should be applied to peers on the LAN"},
+          {name:"alt_dl_limit", type:"integer", desc:"Alternative global download speed limit in KiB/s"},
+          {name:"alt_up_limit", type:"integer", desc:"Alternative global upload speed limit in KiB/s"},
+          {name:"scheduler_enabled", type:"bool", desc:"True if alternative limits should be applied according to schedule"},
+          {name:"schedule_from_hour", type:"integer", desc:"Scheduler starting hour"},
+          {name:"schedule_from_min", type:"integer", desc:"Scheduler starting minute"},
+          {name:"schedule_to_hour", type:"integer", desc:"Scheduler ending hour"},
+          {name:"schedule_to_min", type:"integer", desc:"Scheduler ending minute"},
+          {name:"scheduler_days", type:"integer", desc:"Scheduler days"},
+          {name:"dht", type:"bool", desc:"True if DHT is enabled"},
+          {name:"pex", type:"bool", desc:"True if PeX is enabled"},
+          {name:"lsd", type:"bool", desc:"True if LSD is enabled"},
+          {name:"encryption", type:"integer", desc:"Encryption setting"},
+          {name:"anonymous_mode", type:"bool", desc:"If true anonymous mode will be enabled"},
+          {name:"proxy_type", type:"integer", desc:"Proxy type"},
+          {name:"proxy_ip", type:"string", desc:"Proxy IP address or domain name"},
+          {name:"proxy_port", type:"integer", desc:"Proxy port"},
+          {name:"proxy_peer_connections", type:"bool", desc:"True if peer and web seed connections should be proxified"},
+          {name:"proxy_auth_enabled", type:"bool", desc:"True proxy requires authentication; doesn't apply to SOCKS4 proxies"},
+          {name:"proxy_username", type:"string", desc:"Username for proxy authentication"},
+          {name:"proxy_password", type:"string", desc:"Password for proxy authentication"},
+          {name:"proxy_torrents_only", type:"bool", desc:"True if proxy is only used for torrents"},
+          {name:"ip_filter_enabled", type:"bool", desc:"True if external IP filter should be enabled"},
+          {name:"ip_filter_path", type:"string", desc:"Path to IP filter file (.dat, .p2p, .p2b files are supported); path is separated by slashes"},
+          {name:"ip_filter_trackers", type:"bool", desc:"True if IP filters are applied to trackers"},
+          {name:"web_ui_domain_list", type:"string", desc:"Semicolon-separated list of domains to accept when performing Host header validation"},
+          {name:"web_ui_address", type:"string", desc:"IP address to use for the WebUI"},
+          {name:"web_ui_port", type:"integer", desc:"WebUI port"},
+          {name:"web_ui_upnp", type:"bool", desc:"True if UPnP is used for the WebUI port"},
+          {name:"web_ui_username", type:"string", desc:"WebUI username"},
+          {name:"web_ui_password", type:"string", desc:"For API ≥ v2.3.0: Plaintext WebUI password, not readable, write-only. For API < v2.3.0: MD5 hash of WebUI password"},
+          {name:"web_ui_csrf_protection_enabled", type:"bool", desc:"True if WebUI CSRF protection is enabled"},
+          {name:"web_ui_clickjacking_protection_enabled", type:"bool", desc:"True if WebUI clickjacking protection is enabled"},
+          {name:"web_ui_secure_cookie_enabled", type:"bool", desc:"True if WebUI cookie Secure flag is enabled"},
+          {name:"web_ui_max_auth_fail_count", type:"integer", desc:"Maximum number of authentication failures before WebUI access ban"},
+          {name:"web_ui_ban_duration", type:"integer", desc:"WebUI access ban duration in seconds"},
+          {name:"web_ui_session_timeout", type:"integer", desc:"Seconds until WebUI is automatically signed off"},
+          {name:"web_ui_host_header_validation_enabled", type:"bool", desc:"True if WebUI host header validation is enabled"},
+          {name:"bypass_local_auth", type:"bool", desc:"True if authentication challenge for loopback address (127.0.0.1) should be disabled"},
+          {name:"bypass_auth_subnet_whitelist_enabled", type:"bool", desc:"True if webui authentication should be bypassed for clients whose ip resides within (at least) one of the subnets on the whitelist"},
+          {name:"bypass_auth_subnet_whitelist", type:"string", desc:"(White)list of ipv4/ipv6 subnets for which webui authentication should be bypassed; list entries are separated by commas"},
+          {name:"alternative_webui_enabled", type:"bool", desc:"True if an alternative WebUI should be used"},
+          {name:"alternative_webui_path", type:"string", desc:"File path to the alternative WebUI"},
+          {name:"use_https", type:"bool", desc:"True if WebUI HTTPS access is enabled"},
+          {name:"ssl_key", type:"string", desc:"For API < v2.0.1: SSL keyfile contents (this is a not a path)"},
+          {name:"ssl_cert", type:"string", desc:"For API < v2.0.1: SSL certificate contents (this is a not a path)"},
+          {name:"web_ui_https_key_path", type:"string", desc:"For API ≥ v2.0.1: Path to SSL keyfile"},
+          {name:"web_ui_https_cert_path", type:"string", desc:"For API ≥ v2.0.1: Path to SSL certificate"},
+          {name:"dyndns_enabled", type:"bool", desc:"True if server DNS should be updated dynamically"},
+          {name:"dyndns_service", type:"integer", desc:"DDNS service"},
+          {name:"dyndns_username", type:"string", desc:"Username for DDNS service"},
+          {name:"dyndns_password", type:"string", desc:"Password for DDNS service"},
+          {name:"dyndns_domain", type:"string", desc:"Your DDNS domain name"},
+          {name:"rss_refresh_interval", type:"integer", desc:"RSS refresh interval"},
+          {name:"rss_max_articles_per_feed", type:"integer", desc:"Max stored articles per RSS feed"},
+          {name:"rss_processing_enabled", type:"bool", desc:"Enable processing of RSS feeds"},
+          {name:"rss_auto_downloading_enabled", type:"bool", desc:"Enable auto-downloading of torrents from the RSS feeds"},
+          {name:"rss_download_repack_proper_episodes", type:"bool", desc:"For API ≥ v2.5.1: Enable downloading of repack/proper Episodes"},
+          {name:"rss_smart_episode_filters", type:"string", desc:"For API ≥ v2.5.1: List of RSS Smart Episode Filters"},
+          {name:"add_trackers_enabled", type:"bool", desc:"Enable automatic adding of trackers to new torrents"},
+          {name:"add_trackers", type:"string", desc:"List of trackers to add to new torrent"},
+          {name:"web_ui_use_custom_http_headers_enabled", type:"bool", desc:"For API ≥ v2.5.1: Enable custom http headers"},
+          {name:"web_ui_custom_http_headers", type:"string", desc:"For API ≥ v2.5.1: List of custom http headers"},
+          {name:"max_seeding_time_enabled", type:"bool", desc:"True enables max seeding time"},
+          {name:"max_seeding_time", type:"integer", desc:"Number of minutes to seed a torrent"},
+          {name:"announce_ip", type:"string", desc:"TODO"},
+          {name:"announce_to_all_tiers", type:"bool", desc:"True always announce to all tiers"},
+          {name:"announce_to_all_trackers", type:"bool", desc:"True always announce to all trackers in a tier"},
+          {name:"async_io_threads", type:"integer", desc:"Number of asynchronous I/O threads"},
+          {name:"banned_IPs", type:"string", desc:"List of banned IPs"},
+          {name:"checking_memory_use", type:"integer", desc:"Outstanding memory when checking torrents in MiB"},
+          {name:"current_interface_address", type:"string", desc:"IP Address to bind to. Empty String means All addresses"},
+          {name:"current_network_interface", type:"string", desc:"Network Interface used"},
+          {name:"disk_cache", type:"integer", desc:"Disk cache used in MiB"},
+          {name:"disk_cache_ttl", type:"integer", desc:"Disk cache expiry interval in seconds"},
+          {name:"embedded_tracker_port", type:"integer", desc:"Port used for embedded tracker"},
+          {name:"enable_coalesce_read_write", type:"bool", desc:"True enables coalesce reads & writes"},
+          {name:"enable_embedded_tracker", type:"bool", desc:"True enables embedded tracker"},
+          {name:"enable_multi_connections_from_same_ip", type:"bool", desc:"True allows multiple connections from the same IP address"},
+          {name:"enable_os_cache", type:"bool", desc:"True enables os cache"},
+          {name:"enable_upload_suggestions", type:"bool", desc:"True enables sending of upload piece suggestions"},
+          {name:"file_pool_size", type:"integer", desc:"File pool size"},
+          {name:"outgoing_ports_max", type:"integer", desc:"Maximal outgoing port (0: Disabled)"},
+          {name:"outgoing_ports_min", type:"integer", desc:"Minimal outgoing port (0: Disabled)"},
+          {name:"recheck_completed_torrents", type:"bool", desc:"True rechecks torrents on completion"},
+          {name:"resolve_peer_countries", type:"bool", desc:"True resolves peer countries"},
+          {name:"save_resume_data_interval", type:"integer", desc:"Save resume data interval in min"},
+          {name:"send_buffer_low_watermark", type:"integer", desc:"Send buffer low watermark in KiB"},
+          {name:"send_buffer_watermark", type:"integer", desc:"Send buffer watermark in KiB"},
+          {name:"send_buffer_watermark_factor", type:"integer", desc:"Send buffer watermark factor in percent"},
+          {name:"socket_backlog_size", type:"integer", desc:"Socket backlog size"},
+          {name:"upload_choking_algorithm", type:"integer", desc:"Upload choking algorithm used"},
+          {name:"upload_slots_behavior", type:"integer", desc:"Upload slots behavior used"},
+          {name:"upnp_lease_duration", type:"integer", desc:"UPnP lease duration (0: Permanent lease)"},
+          {name:"utp_tcp_mixed_mode", type:"integer", desc:"μTP-TCP mixed mode algorithm"}
+        ],
+        enums:[
+          {title:"Possible values of `scan_dirs`", rows:[
+            {v:"0", d:"Download to the monitored folder"},
+            {v:"1", d:"Download to the default save path"},
+            {v:'"/path/to/download/to"', d:"Download to this path"}
+          ]},
+          {title:"Possible values of `scheduler_days`", rows:[
+            {v:"0", d:"Every day"},{v:"1", d:"Every weekday"},{v:"2", d:"Every weekend"},
+            {v:"3", d:"Every Monday"},{v:"4", d:"Every Tuesday"},{v:"5", d:"Every Wednesday"},
+            {v:"6", d:"Every Thursday"},{v:"7", d:"Every Friday"},{v:"8", d:"Every Saturday"},
+            {v:"9", d:"Every Sunday"}
+          ]},
+          {title:"Possible values of `encryption`", rows:[
+            {v:"0", d:"Prefer encryption (default; allows both encrypted and unencrypted)"},
+            {v:"1", d:"Force encryption on"},
+            {v:"2", d:"Force encryption off"}
+          ]},
+          {title:"Possible values of `proxy_type`", rows:[
+            {v:"-1", d:"Proxy is disabled"},{v:"1", d:"HTTP proxy without authentication"},
+            {v:"2", d:"SOCKS5 proxy without authentication"},{v:"3", d:"HTTP proxy with authentication"},
+            {v:"4", d:"SOCKS5 proxy with authentication"},{v:"5", d:"SOCKS4 proxy without authentication"}
+          ]},
+          {title:"Possible values of `dyndns_service`", rows:[
+            {v:"0", d:"Use DyDNS"},{v:"1", d:"Use NOIP"}
+          ]},
+          {title:"Possible values of `max_ratio_act`", rows:[
+            {v:"0", d:"Pause torrent"},{v:"1", d:"Remove torrent"}
+          ]},
+          {title:"Possible values of `bittorrent_protocol`", rows:[
+            {v:"0", d:"TCP and μTP"},{v:"1", d:"TCP"},{v:"2", d:"μTP"}
+          ]},
+          {title:"Possible values of `upload_choking_algorithm`", rows:[
+            {v:"0", d:"Round-robin"},{v:"1", d:"Fastest upload"},{v:"2", d:"Anti-leech"}
+          ]},
+          {title:"Possible values of `upload_slots_behavior`", rows:[
+            {v:"0", d:"Fixed slots"},{v:"1", d:"Upload rate based"}
+          ]},
+          {title:"Possible values of `utp_tcp_mixed_mode`", rows:[
+            {v:"0", d:"Prefer TCP"},{v:"1", d:"Peer proportional"}
+          ]}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "add_trackers": "",
+    "add_trackers_enabled": false,
+    "alt_dl_limit": 10240,
+    "alt_up_limit": 10240,
+    "alternative_webui_enabled": false,
+    "alternative_webui_path": "/home/user/Documents/qbit-webui",
+    "announce_ip": "",
+    "announce_to_all_tiers": true,
+    "announce_to_all_trackers": false,
+    "anonymous_mode": false,
+    "async_io_threads": 4,
+    "auto_delete_mode": 0,
+    "auto_tmm_enabled": false,
+    "autorun_enabled": false,
+    "autorun_program": "",
+    "banned_IPs": "",
+    "bittorrent_protocol": 0,
+    "bypass_auth_subnet_whitelist": "",
+    "bypass_auth_subnet_whitelist_enabled": false,
+    "bypass_local_auth": false,
+    "category_changed_tmm_enabled": false,
+    "checking_memory_use": 32,
+    "create_subfolder_enabled": true,
+    "current_interface_address": "",
+    "current_network_interface": "",
+    "dht": true,
+    "disk_cache": -1,
+    "disk_cache_ttl": 60,
+    "dl_limit": 0,
+    "dont_count_slow_torrents": false,
+    "dyndns_domain": "changeme.dyndns.org",
+    "dyndns_enabled": false,
+    "dyndns_password": "",
+    "dyndns_service": 0,
+    "dyndns_username": "",
+    "embedded_tracker_port": 9000,
+    "enable_coalesce_read_write": false,
+    "enable_embedded_tracker": false,
+    "enable_multi_connections_from_same_ip": false,
+    "enable_os_cache": true,
+    "enable_piece_extent_affinity": false,
+    "enable_upload_suggestions": false,
+    "encryption": 0,
+    "export_dir": "/home/user/Downloads/all",
+    "export_dir_fin": "/home/user/Downloads/completed",
+    "file_pool_size": 40,
+    "incomplete_files_ext": false,
+    "ip_filter_enabled": false,
+    "ip_filter_path": "",
+    "ip_filter_trackers": false,
+    "limit_lan_peers": true,
+    "limit_tcp_overhead": false,
+    "limit_utp_rate": true,
+    "listen_port": 58925,
+    "locale": "en",
+    "lsd": true,
+    "mail_notification_auth_enabled": false,
+    "mail_notification_email": "",
+    "mail_notification_enabled": false,
+    "mail_notification_password": "",
+    "mail_notification_sender": "qBittorrent_notification@example.com",
+    "mail_notification_smtp": "smtp.changeme.com",
+    "mail_notification_ssl_enabled": false,
+    "mail_notification_username": "",
+    "max_active_downloads": 3,
+    "max_active_torrents": 5,
+    "max_active_uploads": 3,
+    "max_connec": 500,
+    "max_connec_per_torrent": 100,
+    "max_ratio": -1,
+    "max_ratio_act": 0,
+    "max_ratio_enabled": false,
+    "max_seeding_time": -1,
+    "max_seeding_time_enabled": false,
+    "max_uploads": -1,
+    "max_uploads_per_torrent": -1,
+    "outgoing_ports_max": 0,
+    "outgoing_ports_min": 0,
+    "pex": true,
+    "preallocate_all": false,
+    "proxy_auth_enabled": false,
+    "proxy_ip": "0.0.0.0",
+    "proxy_password": "",
+    "proxy_peer_connections": false,
+    "proxy_port": 8080,
+    "proxy_torrents_only": false,
+    "proxy_type": 0,
+    "proxy_username": "",
+    "queueing_enabled": false,
+    "random_port": false,
+    "recheck_completed_torrents": false,
+    "resolve_peer_countries": true,
+    "rss_auto_downloading_enabled": true,
+    "rss_download_repack_proper_episodes": true,
+    "rss_max_articles_per_feed": 50,
+    "rss_processing_enabled": true,
+    "rss_refresh_interval": 30,
+    "rss_smart_episode_filters": "s(\\d+)e(\\d+)\n(\\d+)x(\\d+)\n(\\d{4}[.\\-]\\d{1,2}[.\\-]\\d{1,2})",
+    "save_path": "/home/user/Downloads/",
+    "save_path_changed_tmm_enabled": false,
+    "save_resume_data_interval": 60,
+    "scan_dirs": {
+        "/home/user/Downloads/incoming/games": 0,
+        "/home/user/Downloads/incoming/movies": 1
+    },
+    "schedule_from_hour": 8,
+    "schedule_from_min": 0,
+    "schedule_to_hour": 20,
+    "schedule_to_min": 0,
+    "scheduler_days": 0,
+    "scheduler_enabled": false,
+    "send_buffer_low_watermark": 10,
+    "send_buffer_watermark": 500,
+    "send_buffer_watermark_factor": 50,
+    "slow_torrent_dl_rate_threshold": 2,
+    "slow_torrent_inactive_timer": 60,
+    "slow_torrent_ul_rate_threshold": 2,
+    "socket_backlog_size": 30,
+    "start_paused_enabled": false,
+    "stop_tracker_timeout": 1,
+    "temp_path": "/home/user/Downloads/temp",
+    "temp_path_enabled": false,
+    "torrent_changed_tmm_enabled": true,
+    "up_limit": 0,
+    "upload_choking_algorithm": 1,
+    "upload_slots_behavior": 0,
+    "upnp": true,
+    "use_https": false,
+    "utp_tcp_mixed_mode": 0,
+    "web_ui_address": "*",
+    "web_ui_ban_duration": 3600,
+    "web_ui_clickjacking_protection_enabled": true,
+    "web_ui_csrf_protection_enabled": true,
+    "web_ui_custom_http_headers": "",
+    "web_ui_domain_list": "*",
+    "web_ui_host_header_validation_enabled": true,
+    "web_ui_https_cert_path": "",
+    "web_ui_https_key_path": "",
+    "web_ui_max_auth_fail_count": 5,
+    "web_ui_port": 8080,
+    "web_ui_secure_cookie_enabled": true,
+    "web_ui_session_timeout": 3600,
+    "web_ui_upnp": false,
+    "web_ui_use_custom_http_headers_enabled": false,
+    "web_ui_username": "admin"
+}`}
+        ]
+      },
+      {
+        id:"app-setpreferences", method:"POST", name:"setPreferences", title:"设置应用偏好设置",
+        desc:"以 JSON 键值对形式修改应用的设置项。",
+        params:[
+          {name:"json", type:"json", req:true, desc:"A JSON object with key-value pairs of the settings you want to change and their new values"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        notes:[
+          "There is no need to pass all possible preferences' `token:value` pairs if you only want to change one option",
+          "Paths in `scan_dirs` must exist, otherwise this option will have no effect",
+          "String values must be quoted; integer and boolean values must never be quoted",
+          "For a list of possible preference options see `GET /api/v2/app/preferences`"
+        ],
+        examples:[
+          {lang:"json", code:String.raw`json={"save_path":"C:/Users/Dayman/Downloads","queueing_enabled":false,"scan_dirs":{"C:/Games": 0,"D:/Downloads": 1}}`}
+        ]
+      },
+      {
+        id:"app-defaultsavepath", method:"GET", name:"defaultSavePath", title:"获取默认保存路径",
+        desc:"返回默认下载保存路径字符串。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回默认保存路径字符串，例如 `C:/Users/Dayman/Downloads`。"
+      },
+      {
+        id:"app-cookies", method:"GET", name:"cookies", title:"获取 Cookies",
+        desc:"返回用于下载 .torrent 文件的 Cookie 列表（JSON 数组）。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"name", type:"string", desc:"Cookie name"},
+          {name:"domain", type:"string", desc:"Cookie domain"},
+          {name:"path", type:"string", desc:"Cookie path"},
+          {name:"value", type:"string", desc:"Cookie value"},
+          {name:"expirationDate", type:"integer", desc:"Seconds since epoch"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[
+    {
+        "name": "Example",
+        "domain": "example.com",
+        "path": "/",
+        "value": "foo=bar",
+        "expirationDate": 1507969127
+    }
+]`}
+        ]
+      },
+      {
+        id:"app-setcookies", method:"POST", name:"setCookies", title:"设置 Cookies",
+        desc:"设置下载 .torrent 文件时发送的 Cookie 列表。",
+        params:[
+          {name:"cookies", type:"json array", req:true, desc:"A JSON array of cookies to send when downloading .torrent files"}
+        ],
+        returns:[
+          {code:200, cls:"ok", desc:"Cookies were saved"},
+          {code:400, cls:"err", desc:"Request was not a valid json array of cookie objects"}
+        ],
+        fields:[
+          {name:"name", type:"string?", desc:"Cookie name"},
+          {name:"domain", type:"string?", desc:"Cookie domain"},
+          {name:"path", type:"string?", desc:"Cookie path"},
+          {name:"value", type:"string?", desc:"Cookie value"},
+          {name:"expirationDate", type:"integer?", desc:"Seconds since epoch"}
+        ]
+      }
+    ]
+  },
+
+  /* ---------- LOG ---------- */
+  {
+    slug:"log", title:"日志", en:"Log",
+    intro:"所有日志接口位于 `log` 分组下，例如 `/api/v2/log/methodName`。",
+    endpoints:[
+      {
+        id:"log-main", method:"GET", name:"main", title:"获取日志",
+        desc:"获取 qBittorrent 日志，可按消息级别过滤。",
+        params:[
+          {name:"normal", type:"bool", req:false, desc:"Include normal messages (default: `true`)"},
+          {name:"info", type:"bool", req:false, desc:"Include info messages (default: `true`)"},
+          {name:"warning", type:"bool", req:false, desc:"Include warning messages (default: `true`)"},
+          {name:"critical", type:"bool", req:false, desc:"Include critical messages (default: `true`)"},
+          {name:"last_known_id", type:"integer", req:false, desc:"Exclude messages with \"message id\" <= `last_known_id` (default: `-1`)"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"id", type:"integer", desc:"ID of the message"},
+          {name:"message", type:"string", desc:"Text of the message"},
+          {name:"timestamp", type:"integer", desc:"Seconds since epoch (switched from milliseconds to seconds in v4.5.0)"},
+          {name:"type", type:"integer", desc:"Log::NORMAL: `1`, Log::INFO: `2`, Log::WARNING: `4`, Log::CRITICAL: `8`"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/log/main?normal=true&info=true&warning=true&critical=true&last_known_id=-1`},
+          {lang:"json", code:String.raw`[
+    {"id":0,"message":"qBittorrent v3.4.0 started","timestamp":1507969127,"type":1},
+    {"id":1,"message":"qBittorrent is trying to listen on any interface port: 19036","timestamp":1507969127,"type":2},
+    {"id":2,"message":"Peer ID: -qB3400-","timestamp":1507969127,"type":1},
+    {"id":3,"message":"HTTP User-Agent is 'qBittorrent/3.4.0'","timestamp":1507969127,"type":1},
+    {"id":4,"message":"DHT support [ON]","timestamp":1507969127,"type":2},
+    {"id":5,"message":"Local Peer Discovery support [ON]","timestamp":1507969127,"type":2},
+    {"id":6,"message":"PeX support [ON]","timestamp":1507969127,"type":2},
+    {"id":7,"message":"Anonymous mode [OFF]","timestamp":1507969127,"type":2},
+    {"id":8,"message":"Encryption support [ON]","timestamp":1507969127,"type":2},
+    {"id":9,"message":"Embedded Tracker [OFF]","timestamp":1507969127,"type":2},
+    {"id":10,"message":"UPnP / NAT-PMP support [ON]","timestamp":1507969127,"type":2},
+    {"id":11,"message":"Web UI: Now listening on port 8080","timestamp":1507969127,"type":1},
+    {"id":12,"message":"Options were saved successfully.","timestamp":1507969128,"type":1},
+    {"id":13,"message":"qBittorrent is successfully listening on interface :: port: TCP/19036","timestamp":1507969128,"type":2},
+    {"id":14,"message":"qBittorrent is successfully listening on interface 0.0.0.0 port: TCP/19036","timestamp":1507969128,"type":2},
+    {"id":15,"message":"qBittorrent is successfully listening on interface 0.0.0.0 port: UDP/19036","timestamp":1507969128,"type":2}
+]`}
+        ]
+      },
+      {
+        id:"log-peers", method:"GET", name:"peers", title:"获取 Peer 日志",
+        desc:"获取 Peer 相关日志（封禁记录等）。",
+        params:[
+          {name:"last_known_id", type:"integer", req:false, desc:"Exclude messages with \"message id\" <= `last_known_id` (default: `-1`)"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"id", type:"integer", desc:"ID of the peer"},
+          {name:"ip", type:"string", desc:"IP of the peer"},
+          {name:"timestamp", type:"integer", desc:"Seconds since epoch"},
+          {name:"blocked", type:"boolean", desc:"Whether or not the peer was blocked"},
+          {name:"reason", type:"string", desc:"Reason of the block"}
+        ]
+      }
+    ]
+  },
+
+  /* ---------- SYNC ---------- */
+  {
+    slug:"sync", title:"同步", en:"Sync",
+    intro:"Sync API 用于实现「自上次请求以来的变更」增量同步。所有接口位于 `sync` 分组下，例如 `/api/v2/sync/methodName`。",
+    endpoints:[
+      {
+        id:"sync-maindata", method:"GET", name:"maindata", title:"获取主数据",
+        desc:"获取主数据（增量）。通过 `rid` 实现增量同步：若传入的 `rid` 与上次服务端返回的不同，则 `full_update` 为 `true`。",
+        params:[
+          {name:"rid", type:"integer", req:false, desc:"Response ID. If not provided, `rid=0` will be assumed. If the given `rid` is different from the one of last server reply, `full_update` will be `true`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"rid", type:"integer", desc:"Response ID"},
+          {name:"full_update", type:"bool", desc:"Whether the response contains all the data or partial data"},
+          {name:"torrents", type:"object", desc:"Property: torrent hash, value: same as torrent list"},
+          {name:"torrents_removed", type:"array", desc:"List of hashes of torrents removed since last request"},
+          {name:"categories", type:"object", desc:"Info for categories added since last request"},
+          {name:"categories_removed", type:"array", desc:"List of categories removed since last request"},
+          {name:"tags", type:"array", desc:"List of tags added since last request"},
+          {name:"tags_removed", type:"array", desc:"List of tags removed since last request"},
+          {name:"server_state", type:"object", desc:"Global transfer info"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/sync/maindata?rid=14`},
+          {lang:"json", code:String.raw`{
+    "rid": 15,
+    "torrents": {
+        "8c212779b4abde7c6bc608063a0d008b7e40ce32": {
+            "state": "pausedUP"
+        }
+    }
+}`}
+        ]
+      },
+      {
+        id:"sync-torrentpeers", method:"GET", name:"torrentPeers", title:"获取种子 Peer 数据",
+        desc:"获取指定种子的 Peer 增量数据。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"Torrent hash"},
+          {name:"rid", type:"integer", req:false, desc:"Response ID. If not provided, `rid=0` will be assumed. If the given `rid` is different from the one of last server reply, `full_update` will be `true`"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/sync/torrentPeers?hash=8c212779b4abde7c6bc608063a0d008b7e40ce32?rid=14`}
+        ]
+      }
+    ]
+  },
+
+  /* ---------- TRANSFER ---------- */
+  {
+    slug:"transfer", title:"传输信息", en:"Transfer Info",
+    intro:"所有传输信息接口位于 `transfer` 分组下，例如 `/api/v2/transfer/methodName`。",
+    endpoints:[
+      {
+        id:"transfer-info", method:"GET", name:"info", title:"获取全局传输信息",
+        desc:"返回 qBittorrent 状态栏中常见的信息（全局速率、连接状态等）。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"dl_info_speed", type:"integer", desc:"Global download rate (bytes/s)"},
+          {name:"dl_info_data", type:"integer", desc:"Data downloaded this session (bytes)"},
+          {name:"up_info_speed", type:"integer", desc:"Global upload rate (bytes/s)"},
+          {name:"up_info_data", type:"integer", desc:"Data uploaded this session (bytes)"},
+          {name:"dl_rate_limit", type:"integer", desc:"Download rate limit (bytes/s)"},
+          {name:"up_rate_limit", type:"integer", desc:"Upload rate limit (bytes/s)"},
+          {name:"dht_nodes", type:"integer", desc:"DHT nodes connected to"},
+          {name:"connection_status", type:"string", desc:"Connection status: `connected`, `firewalled`, or `disconnected`"}
+        ],
+        extraFields:{title:"Additional fields in partial data requests", rows:[
+          {name:"queueing", type:"bool", desc:"True if torrent queueing is enabled"},
+          {name:"use_alt_speed_limits", type:"bool", desc:"True if alternative speed limits are enabled"},
+          {name:"refresh_interval", type:"integer", desc:"Transfer list refresh interval (milliseconds)"}
+        ]},
+        enums:[
+          {title:"Possible values of `connection_status`", rows:[
+            {v:"connected", d:""},{v:"firewalled", d:""},{v:"disconnected", d:""}
+          ]}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "connection_status": "connected",
+    "dht_nodes": 386,
+    "dl_info_data": 681521119,
+    "dl_info_speed": 0,
+    "dl_rate_limit": 0,
+    "up_info_data": 10747904,
+    "up_info_speed": 0,
+    "up_rate_limit": 1048576
+}`}
+        ]
+      },
+      {
+        id:"transfer-speedlimitsmode", method:"GET", name:"speedLimitsMode", title:"获取备选限速状态",
+        desc:"返回备选限速是否开启。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回 `1` 表示备选限速已启用，`0` 表示未启用。"
+      },
+      {
+        id:"transfer-togglespeedlimitsmode", method:"GET", name:"toggleSpeedLimitsMode", title:"切换备选限速",
+        desc:"在普通限速与备选限速之间切换。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"transfer-downloadlimit", method:"GET", name:"downloadLimit", title:"获取全局下载限速",
+        desc:"返回当前全局下载限速。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回当前全局下载限速（bytes/second）；未设置限速时返回 `0`。"
+      },
+      {
+        id:"transfer-setdownloadlimit", method:"POST", name:"setDownloadLimit", title:"设置全局下载限速",
+        desc:"设置全局下载限速。",
+        params:[
+          {name:"limit", type:"integer", req:true, desc:"The global download speed limit to set in bytes/second"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"transfer-uploadlimit", method:"GET", name:"uploadLimit", title:"获取全局上传限速",
+        desc:"返回当前全局上传限速。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回当前全局上传限速（bytes/second）；未设置限速时返回 `0`。"
+      },
+      {
+        id:"transfer-setuploadlimit", method:"POST", name:"setUploadLimit", title:"设置全局上传限速",
+        desc:"设置全局上传限速。",
+        params:[
+          {name:"limit", type:"integer", req:true, desc:"The global upload speed limit to set in bytes/second"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"transfer-banpeers", method:"POST", name:"banPeers", title:"封禁 Peer",
+        desc:"封禁一个或多个 Peer。",
+        params:[
+          {name:"peers", type:"string", req:true, desc:"The peer to ban, or multiple peers separated by a pipe `|`. Each peer is a colon-separated `host:port`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      }
+    ]
+  },
+
+  /* ---------- TORRENTS ---------- */
+  {
+    slug:"torrents", title:"种子管理", en:"Torrent Management",
+    intro:"所有种子管理接口位于 `torrents` 分组下，例如 `/api/v2/torrents/methodName`。",
+    endpoints:[
+      {
+        id:"torrents-info", method:"GET", name:"info", title:"获取种子列表",
+        desc:"获取种子列表，支持按状态、分类、标签、排序、分页与哈希过滤。",
+        params:[
+          {name:"filter", type:"string", req:false, desc:"Filter torrent list by state. Allowed: `all`, `downloading`, `seeding`, `completed`, `stopped`, `active`, `inactive`, `running`, `stalled`, `stalled_uploading`, `stalled_downloading`, `errored`"},
+          {name:"category", type:"string", req:false, desc:"Get torrents with the given category (empty string means \"without category\"; no parameter means \"any category\"). URL-encode the category name, e.g. `My category` becomes `My%20category`"},
+          {name:"tag", type:"string", req:false, since:"2.8.3", desc:"Get torrents with the given tag (empty string means \"without tag\"; no parameter means \"any tag\"). URL-encode the tag name"},
+          {name:"sort", type:"string", req:false, desc:"Sort torrents by given key (any field of the response JSON)"},
+          {name:"reverse", type:"bool", req:false, desc:"Enable reverse sorting. Defaults to `false`"},
+          {name:"limit", type:"integer", req:false, desc:"Limit the number of torrents returned"},
+          {name:"offset", type:"integer", req:false, desc:"Set offset (if less than 0, offset from end)"},
+          {name:"hashes", type:"string", req:false, desc:"Filter by hashes. Multiple hashes separated by `|`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"added_on", type:"integer", desc:"Time (Unix Epoch) when the torrent was added to the client"},
+          {name:"amount_left", type:"integer", desc:"Amount of data left to download (bytes)"},
+          {name:"auto_tmm", type:"bool", desc:"Whether this torrent is managed by Automatic Torrent Management"},
+          {name:"availability", type:"float", desc:"Percentage of file pieces currently available"},
+          {name:"category", type:"string", desc:"Category of the torrent"},
+          {name:"completed", type:"integer", desc:"Amount of transfer data completed (bytes)"},
+          {name:"completion_on", type:"integer", desc:"Time (Unix Epoch) when the torrent completed"},
+          {name:"content_path", type:"string", desc:"Absolute path of torrent content (root path for multifile torrents, absolute file path for singlefile torrents)"},
+          {name:"dl_limit", type:"integer", desc:"Torrent download speed limit (bytes/s). `-1` if unlimited"},
+          {name:"dlspeed", type:"integer", desc:"Torrent download speed (bytes/s)"},
+          {name:"downloaded", type:"integer", desc:"Amount of data downloaded"},
+          {name:"downloaded_session", type:"integer", desc:"Amount of data downloaded this session"},
+          {name:"eta", type:"integer", desc:"Torrent ETA (seconds)"},
+          {name:"f_l_piece_prio", type:"bool", desc:"True if first last piece are prioritized"},
+          {name:"force_start", type:"bool", desc:"True if force start is enabled for this torrent"},
+          {name:"hash", type:"string", desc:"Torrent hash"},
+          {name:"isPrivate", type:"bool", since:"5.0.0", desc:"True if torrent is from a private tracker"},
+          {name:"last_activity", type:"integer", desc:"Last time (Unix Epoch) when a chunk was downloaded/uploaded"},
+          {name:"magnet_uri", type:"string", desc:"Magnet URI corresponding to this torrent"},
+          {name:"max_ratio", type:"float", desc:"Maximum share ratio until torrent is stopped from seeding/uploading"},
+          {name:"max_seeding_time", type:"integer", desc:"Maximum seeding time (seconds) until torrent is stopped from seeding"},
+          {name:"name", type:"string", desc:"Torrent name"},
+          {name:"num_complete", type:"integer", desc:"Number of seeds in the swarm"},
+          {name:"num_incomplete", type:"integer", desc:"Number of leechers in the swarm"},
+          {name:"num_leechs", type:"integer", desc:"Number of leechers connected to"},
+          {name:"num_seeds", type:"integer", desc:"Number of seeds connected to"},
+          {name:"priority", type:"integer", desc:"Torrent priority. Returns `-1` if queuing is disabled or torrent is in seed mode"},
+          {name:"progress", type:"float", desc:"Torrent progress (percentage/100)"},
+          {name:"ratio", type:"float", desc:"Torrent share ratio. Max ratio value: 9999"},
+          {name:"ratio_limit", type:"float", desc:"TODO (what is different from `max_ratio`?)"},
+          {name:"reannounce", type:"integer", desc:"Time until the next tracker reannounce"},
+          {name:"save_path", type:"string", desc:"Path where this torrent's data is stored"},
+          {name:"seeding_time", type:"integer", desc:"Torrent elapsed time while complete (seconds)"},
+          {name:"seeding_time_limit", type:"integer", desc:"Per torrent setting when ATM is disabled. If ATM enabled, value is -2. If unset, default -1"},
+          {name:"seen_complete", type:"integer", desc:"Time (Unix Epoch) when this torrent was last seen complete"},
+          {name:"seq_dl", type:"bool", desc:"True if sequential download is enabled"},
+          {name:"size", type:"integer", desc:"Total size (bytes) of files selected for download"},
+          {name:"state", type:"string", desc:"Torrent state (see table below)"},
+          {name:"super_seeding", type:"bool", desc:"True if super seeding is enabled"},
+          {name:"tags", type:"string", desc:"Comma-concatenated tag list of the torrent"},
+          {name:"time_active", type:"integer", desc:"Total active time (seconds)"},
+          {name:"total_size", type:"integer", desc:"Total size (bytes) of all files (including unselected)"},
+          {name:"tracker", type:"string", desc:"The first tracker with working status. Returns empty string if no tracker is working"},
+          {name:"up_limit", type:"integer", desc:"Torrent upload speed limit (bytes/s). `-1` if unlimited"},
+          {name:"uploaded", type:"integer", desc:"Amount of data uploaded"},
+          {name:"uploaded_session", type:"integer", desc:"Amount of data uploaded this session"},
+          {name:"upspeed", type:"integer", desc:"Torrent upload speed (bytes/s)"}
+        ],
+        enums:[
+          {title:"Possible values of `state`", rows:[
+            {v:"error", d:"Some error occurred, applies to paused torrents"},
+            {v:"missingFiles", d:"Torrent data files is missing"},
+            {v:"uploading", d:"Torrent is being seeded and data is being transferred"},
+            {v:"pausedUP", d:"Torrent is paused and has finished downloading"},
+            {v:"queuedUP", d:"Queuing is enabled and torrent is queued for upload"},
+            {v:"stalledUP", d:"Torrent is being seeded, but no connections were made"},
+            {v:"checkingUP", d:"Torrent has finished downloading and is being checked"},
+            {v:"forcedUP", d:"Torrent is forced to uploading and ignores queue limit"},
+            {v:"allocating", d:"Torrent is allocating disk space for download"},
+            {v:"downloading", d:"Torrent is being downloaded and data is being transferred"},
+            {v:"metaDL", d:"Torrent has just started downloading and is fetching metadata"},
+            {v:"pausedDL", d:"Torrent is paused and has NOT finished downloading"},
+            {v:"queuedDL", d:"Queuing is enabled and torrent is queued for download"},
+            {v:"stalledDL", d:"Torrent is being downloaded, but no connections were made"},
+            {v:"checkingDL", d:"Same as checkingUP, but torrent has NOT finished downloading"},
+            {v:"forcedDL", d:"Torrent is forced to downloading to ignore queue limit"},
+            {v:"checkingResumeData", d:"Checking resume data on qBt startup"},
+            {v:"moving", d:"Torrent is moving to another location"},
+            {v:"unknown", d:"Unknown status"}
+          ]}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/torrents/info?filter=downloading&category=sample%20category&sort=ratio`},
+          {lang:"json", code:String.raw`[
+    {
+        "dlspeed": 9681262,
+        "eta": 87,
+        "f_l_piece_prio": false,
+        "force_start": false,
+        "hash": "8c212779b4abde7c6bc608063a0d008b7e40ce32",
+        "category": "",
+        "tags": "",
+        "name": "debian-8.1.0-amd64-CD-1.iso",
+        "num_complete": -1,
+        "num_incomplete": -1,
+        "num_leechs": 2,
+        "num_seeds": 54,
+        "priority": 1,
+        "progress": 0.16108787059783936,
+        "ratio": 0,
+        "seq_dl": false,
+        "size": 657457152,
+        "state": "downloading",
+        "super_seeding": false,
+        "upspeed": 0,
+        "isPrivate": true
+    }
+]`}
+        ]
+      },
+      {
+        id:"torrents-properties", method:"GET", name:"properties", title:"获取种子通用属性",
+        desc:"需要知道种子哈希（可从种子列表接口获取）。返回指定种子的通用属性。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent you want to get the generic properties of"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"save_path", type:"string", desc:"Torrent save path"},
+          {name:"creation_date", type:"integer", desc:"Torrent creation date (Unix timestamp)"},
+          {name:"piece_size", type:"integer", desc:"Torrent piece size (bytes)"},
+          {name:"comment", type:"string", desc:"Torrent comment"},
+          {name:"total_wasted", type:"integer", desc:"Total data wasted for torrent (bytes)"},
+          {name:"total_uploaded", type:"integer", desc:"Total data uploaded for torrent (bytes)"},
+          {name:"total_uploaded_session", type:"integer", desc:"Total data uploaded this session (bytes)"},
+          {name:"total_downloaded", type:"integer", desc:"Total data downloaded for torrent (bytes)"},
+          {name:"total_downloaded_session", type:"integer", desc:"Total data downloaded this session (bytes)"},
+          {name:"up_limit", type:"integer", desc:"Torrent upload limit (bytes/s)"},
+          {name:"dl_limit", type:"integer", desc:"Torrent download limit (bytes/s)"},
+          {name:"time_elapsed", type:"integer", desc:"Torrent elapsed time (seconds)"},
+          {name:"seeding_time", type:"integer", desc:"Torrent elapsed time while complete (seconds)"},
+          {name:"nb_connections", type:"integer", desc:"Torrent connection count"},
+          {name:"nb_connections_limit", type:"integer", desc:"Torrent connection count limit"},
+          {name:"share_ratio", type:"float", desc:"Torrent share ratio"},
+          {name:"addition_date", type:"integer", desc:"When this torrent was added (Unix timestamp)"},
+          {name:"completion_date", type:"integer", desc:"Torrent completion date (Unix timestamp)"},
+          {name:"created_by", type:"string", desc:"Torrent creator"},
+          {name:"dl_speed_avg", type:"integer", desc:"Torrent average download speed (bytes/second)"},
+          {name:"dl_speed", type:"integer", desc:"Torrent download speed (bytes/second)"},
+          {name:"eta", type:"integer", desc:"Torrent ETA (seconds)"},
+          {name:"last_seen", type:"integer", desc:"Last seen complete date (Unix timestamp)"},
+          {name:"peers", type:"integer", desc:"Number of peers connected to"},
+          {name:"peers_total", type:"integer", desc:"Number of peers in the swarm"},
+          {name:"pieces_have", type:"integer", desc:"Number of pieces owned"},
+          {name:"pieces_num", type:"integer", desc:"Number of pieces of the torrent"},
+          {name:"reannounce", type:"integer", desc:"Number of seconds until the next announce"},
+          {name:"seeds", type:"integer", desc:"Number of seeds connected to"},
+          {name:"seeds_total", type:"integer", desc:"Number of seeds in the swarm"},
+          {name:"total_size", type:"integer", desc:"Torrent total size (bytes)"},
+          {name:"up_speed_avg", type:"integer", desc:"Torrent average upload speed (bytes/second)"},
+          {name:"up_speed", type:"integer", desc:"Torrent upload speed (bytes/second)"},
+          {name:"isPrivate", type:"bool", desc:"True if torrent is from a private tracker"}
+        ],
+        notes:[
+          "`-1` is returned if the type of the property is integer but its value is not known."
+        ],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "addition_date": 1438429165,
+    "comment": "\"Debian CD from cdimage.debian.org\"",
+    "completion_date": 1438429234,
+    "created_by": "",
+    "creation_date": 1433605214,
+    "dl_limit": -1,
+    "dl_speed": 0,
+    "dl_speed_avg": 9736015,
+    "eta": 8640000,
+    "isPrivate": true,
+    "last_seen": 1438430354,
+    "nb_connections": 3,
+    "nb_connections_limit": 250,
+    "peers": 1,
+    "peers_total": 89,
+    "piece_size": 524288,
+    "pieces_have": 1254,
+    "pieces_num": 1254,
+    "reannounce": 672,
+    "save_path": "/Downloads/debian-8.1.0-amd64-CD-1.iso",
+    "seeding_time": 1128,
+    "seeds": 1,
+    "seeds_total": 254,
+    "share_ratio": 0.00072121022562178299,
+    "time_elapsed": 1197,
+    "total_downloaded": 681521119,
+    "total_downloaded_session": 681521119,
+    "total_size": 657457152,
+    "total_uploaded": 491520,
+    "total_uploaded_session": 491520,
+    "total_wasted": 23481724,
+    "up_limit": -1,
+    "up_speed": 0,
+    "up_speed_avg": 410
+}`}
+        ]
+      },
+      {
+        id:"torrents-trackers", method:"GET", name:"trackers", title:"获取种子 Tracker",
+        desc:"需要知道种子哈希。返回指定种子的 Tracker 列表。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent you want to get the trackers of"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"url", type:"string", desc:"Tracker URL"},
+          {name:"status", type:"integer", desc:"Tracker status (see below)"},
+          {name:"tier", type:"integer", desc:"Tracker priority tier. Lower tier tried before higher. `< 0` is placeholder when tier doesn't exist (e.g. DHT)"},
+          {name:"num_peers", type:"integer", desc:"Number of peers for current torrent, as reported by the tracker"},
+          {name:"num_seeds", type:"integer", desc:"Number of seeds for current torrent, as reported by the tracker"},
+          {name:"num_leeches", type:"integer", desc:"Number of leeches for current torrent, as reported by the tracker"},
+          {name:"num_downloaded", type:"integer", desc:"Number of completed downloads for current torrent, as reported by the tracker"},
+          {name:"msg", type:"string", desc:"Tracker message"}
+        ],
+        enums:[
+          {title:"Possible values of `status`", rows:[
+            {v:"0", d:"Tracker is disabled (used for DHT, PeX, and LSD)"},
+            {v:"1", d:"Tracker has not been contacted yet"},
+            {v:"2", d:"Tracker has been contacted and is working"},
+            {v:"3", d:"Tracker is updating"},
+            {v:"4", d:"Tracker has been contacted, but is not working (or doesn't send proper replies)"}
+          ]}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[
+    {
+        "msg": "",
+        "num_peers": 100,
+        "status": 2,
+        "url": "http://bttracker.debian.org:6969/announce"
+    }
+]`}
+        ]
+      },
+      {
+        id:"torrents-webseeds", method:"GET", name:"webseeds", title:"获取种子 Web Seeds",
+        desc:"需要知道种子哈希。返回指定种子的 Web Seed 列表。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent you want to get the webseeds of"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"url", type:"string", desc:"URL of the web seed"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[
+    {"url": "http://some_url/"},
+    {"url": "http://some_other_url/"}
+]`}
+        ]
+      },
+      {
+        id:"torrents-files", method:"GET", name:"files", title:"获取种子内容（文件列表）",
+        desc:"需要知道种子哈希。返回指定种子的文件列表，可通过 `indexes` 过滤。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent you want to get the contents of"},
+          {name:"indexes", type:"string", req:false, since:"2.8.2", desc:"The indexes of the files you want to retrieve, separated by `|`"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"index", type:"integer", since:"2.8.2", desc:"File index"},
+          {name:"name", type:"string", desc:"File name (including relative path)"},
+          {name:"size", type:"integer", desc:"File size (bytes)"},
+          {name:"progress", type:"float", desc:"File progress (percentage/100)"},
+          {name:"priority", type:"integer", desc:"File priority (see below)"},
+          {name:"is_seed", type:"bool", desc:"True if file is seeding/complete"},
+          {name:"piece_range", type:"integer array", desc:"Starting and ending piece index (inclusive)"},
+          {name:"availability", type:"float", desc:"Percentage of file pieces currently available (percentage/100)"}
+        ],
+        enums:[
+          {title:"Possible values of `priority`", rows:[
+            {v:"0", d:"Do not download"},
+            {v:"1", d:"Normal priority"},
+            {v:"6", d:"High priority"},
+            {v:"7", d:"Maximal priority"}
+          ]}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[
+    {
+        "index": 0,
+        "is_seed": false,
+        "name": "debian-8.1.0-amd64-CD-1.iso",
+        "piece_range": [0, 1253],
+        "priority": 1,
+        "progress": 0,
+        "size": 657457152,
+        "availability": 0.5
+    }
+]`}
+        ]
+      },
+      {
+        id:"torrents-piecestates", method:"GET", name:"pieceStates", title:"获取种子分片状态",
+        desc:"需要知道种子哈希。返回该种子所有分片的状态数组（按顺序）。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent you want to get the pieces' states of"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        enums:[
+          {title:"Value meanings", rows:[
+            {v:"0", d:"Not downloaded yet"},
+            {v:"1", d:"Now downloading"},
+            {v:"2", d:"Already downloaded"}
+          ]}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[0,0,2,1,0,0,2,1]`}
+        ]
+      },
+      {
+        id:"torrents-piecehashes", method:"GET", name:"pieceHashes", title:"获取种子分片哈希",
+        desc:"需要知道种子哈希。返回该种子所有分片的哈希数组（按顺序）。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent you want to get the pieces' hashes of"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`["54eddd830a5b58480a6143d616a97e3a6c23c439","f8a99d225aa4241db100f88407fc3bdaead583ab","928fb615b9bd4dd8f9e9022552c8f8f37ef76f58"]`}
+        ]
+      },
+      {
+        id:"torrents-stop", method:"GET", name:"stop", title:"暂停种子",
+        desc:"暂停一个或多个种子。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents to pause, separated by `|`, or `all` for all torrents"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/torrents/stop?hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|54eddd830a5b58480a6143d616a97e3a6c23c439`}
+        ]
+      },
+      {
+        id:"torrents-start", method:"GET", name:"start", title:"恢复种子",
+        desc:"恢复（继续）一个或多个种子。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents to resume, separated by `|`, or `all` for all torrents"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/torrents/start?hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|54eddd830a5b58480a6143d616a97e3a6c23c439`}
+        ]
+      },
+      {
+        id:"torrents-delete", method:"GET", name:"delete", title:"删除种子",
+        desc:"删除一个或多个种子，可选择同时删除下载的数据文件。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents to delete, separated by `|`, or `all` for all torrents"},
+          {name:"deleteFiles", type:"string", req:false, desc:"If set to `true`, the downloaded data will also be deleted, otherwise has no effect"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/torrents/delete?hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32&deleteFiles=false`}
+        ]
+      },
+      {
+        id:"torrents-recheck", method:"GET", name:"recheck", title:"重新校验种子",
+        desc:"重新校验一个或多个种子的文件完整性。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents to recheck, separated by `|`, or `all` for all torrents"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/torrents/recheck?hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|54eddd830a5b58480a6143d616a97e3a6c23c439`}
+        ]
+      },
+      {
+        id:"torrents-reannounce", method:"GET", name:"reannounce", title:"重新宣告种子",
+        desc:"向 Tracker 重新宣告一个或多个种子。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents to reannounce, separated by `|`, or `all` for all torrents"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`/api/v2/torrents/reannounce?hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|54eddd830a5b58480a6143d616a97e3a6c23c439`}
+        ]
+      },
+      {
+        id:"torrents-add", method:"POST", name:"add", title:"添加新种子",
+        desc:"从服务器本地文件或 URL 添加种子。支持 `http://`、`https://`、`magnet:` 与 `bc://bt/` 链接。",
+        params:[
+          {name:"urls", type:"string", req:false, desc:"URLs separated with newlines"},
+          {name:"torrents", type:"raw", req:false, desc:"Raw data of torrent file. Can be presented multiple times"},
+          {name:"savepath", type:"string", req:false, desc:"Download folder"},
+          {name:"category", type:"string", req:false, desc:"Category for the torrent"},
+          {name:"tags", type:"string", req:false, desc:"Tags for the torrent, split by ','"},
+          {name:"skip_checking", type:"string", req:false, desc:"Skip hash checking. `true` or `false` (default)"},
+          {name:"paused", type:"string", req:false, desc:"Add torrents in the paused state. `true` or `false` (default)"},
+          {name:"root_folder", type:"string", req:false, desc:"Create the root folder. `true`, `false`, or unset (default)"},
+          {name:"rename", type:"string", req:false, desc:"Rename torrent"},
+          {name:"upLimit", type:"integer", req:false, desc:"Set torrent upload speed limit. Unit in bytes/second"},
+          {name:"dlLimit", type:"integer", req:false, desc:"Set torrent download speed limit. Unit in bytes/second"},
+          {name:"ratioLimit", type:"float", req:false, since:"2.8.1", desc:"Set torrent share ratio limit"},
+          {name:"seedingTimeLimit", type:"integer", req:false, since:"2.8.1", desc:"Set torrent seeding time limit. Unit in minutes"},
+          {name:"autoTMM", type:"bool", req:false, desc:"Whether Automatic Torrent Management should be used"},
+          {name:"sequentialDownload", type:"string", req:false, desc:"Enable sequential download. `true` or `false` (default)"},
+          {name:"firstLastPiecePrio", type:"string", req:false, desc:"Prioritize download first last piece. `true` or `false` (default)"}
+        ],
+        returns:[
+          {code:415, cls:"err", desc:"Torrent file is not valid"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/add HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: multipart/form-data; boundary=---------------------------6688794727912
+Content-Length: length
+
+-----------------------------6688794727912
+Content-Disposition: form-data; name="urls"
+
+https://torcache.net/torrent/3B1A1469C180F447B77021074DBBCCAEF62611E7.torrent
+https://torcache.net/torrent/3B1A1469C180F447B77021074DBBCCAEF62611E8.torrent
+-----------------------------6688794727912
+Content-Disposition: form-data; name="savepath"
+
+C:/Users/qBit/Downloads
+-----------------------------6688794727912
+Content-Disposition: form-data; name="category"
+
+movies
+-----------------------------6688794727912
+Content-Disposition: form-data; name="skip_checking"
+
+true
+-----------------------------6688794727912
+Content-Disposition: form-data; name="paused"
+
+true
+-----------------------------6688794727912
+Content-Disposition: form-data; name="root_folder"
+
+true
+-----------------------------6688794727912--`},
+          {lang:"http", code:String.raw`POST /api/v2/torrents/add HTTP/1.1
+Content-Type: multipart/form-data; boundary=-------------------------acebdf13572468
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Length: length
+
+---------------------------acebdf13572468
+Content-Disposition: form-data; name="torrents"; filename="8f18036b7a205c9347cb84a253975e12f7adddf2.torrent"
+Content-Type: application/x-bittorrent
+
+file_binary_data_goes_here
+---------------------------acebdf13572468
+Content-Disposition: form-data; name="torrents"; filename="UFS.torrent"
+Content-Type: application/x-bittorrent
+
+file_binary_data_goes_here
+---------------------------acebdf13572468--`}
+        ]
+      },
+      {
+        id:"torrents-addtrackers", method:"POST", name:"addTrackers", title:"向种子添加 Tracker",
+        desc:"需要知道种子哈希。向指定种子添加一个或多个 Tracker URL。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"urls", type:"string", req:true, desc:"Tracker URLs, separated by newlines (`%0A`). Ampersand in tracker URLs MUST be escaped"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/addTrackers HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hash=8c212779b4abde7c6bc608063a0d008b7e40ce32&urls=http://192.168.0.1/announce%0Audp://192.168.0.1:3333/dummyAnnounce`}
+        ],
+        notes:[
+          "This adds two trackers to torrent. Note `%0A` (aka LF newline) between trackers. Ampersand in tracker urls MUST be escaped."
+        ]
+      },
+      {
+        id:"torrents-edittracker", method:"POST", name:"editTracker", title:"编辑 Tracker",
+        desc:"将指定种子的某个 Tracker URL 替换为新 URL。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"url", type:"string", req:true, desc:"The tracker URL you want to edit"},
+          {name:"newUrl", type:"string", req:true, desc:"The new URL to replace the `url`"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"`newUrl` is not a valid URL"},
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:409, cls:"conflict", desc:"`newUrl` already exists for the torrent"},
+          {code:409, cls:"conflict", desc:"`url` was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-removetrackers", method:"POST", name:"removeTrackers", title:"移除 Tracker",
+        desc:"从指定种子移除一个或多个 Tracker。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"urls", type:"string", req:true, desc:"URLs to remove, separated by `|`"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:409, cls:"conflict", desc:"All `urls` were not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-addpeers", method:"POST", name:"addPeers", title:"添加 Peer",
+        desc:"向一个或多个种子添加 Peer。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"The hash of the torrent, or multiple hashes separated by a pipe `|`"},
+          {name:"peers", type:"string", req:true, desc:"The peer to add, or multiple peers separated by a pipe `|`. Each peer is a colon-separated `host:port`"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"None of the supplied peers are valid"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-increaseprio", method:"GET", name:"increasePrio", title:"提升种子优先级",
+        desc:"提升一个或多个种子的队列优先级。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents, separated by `|`, or `all`"}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Torrent queueing is not enabled"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-decreaseprio", method:"GET", name:"decreasePrio", title:"降低种子优先级",
+        desc:"降低一个或多个种子的队列优先级。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents, separated by `|`, or `all`"}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Torrent queueing is not enabled"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-topprio", method:"GET", name:"topPrio", title:"设为最高优先级",
+        desc:"将一个或多个种子设为队列最高优先级。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents, separated by `|`, or `all`"}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Torrent queueing is not enabled"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-bottomprio", method:"GET", name:"bottomPrio", title:"设为最低优先级",
+        desc:"将一个或多个种子设为队列最低优先级。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes of torrents, separated by `|`, or `all`"}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Torrent queueing is not enabled"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-fileprio", method:"POST", name:"filePrio", title:"设置文件优先级",
+        desc:"设置种子内文件的下载优先级。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"id", type:"string", req:true, desc:"File ids, separated by `|`"},
+          {name:"priority", type:"number", req:true, desc:"File priority to set (see torrent contents API for possible values)"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"Priority is invalid"},
+          {code:400, cls:"err", desc:"At least one file `id` is not a valid integer"},
+          {code:404, cls:"err", desc:"Torrent hash was not found"},
+          {code:409, cls:"conflict", desc:"Torrent metadata hasn't downloaded yet"},
+          {code:409, cls:"conflict", desc:"At least one file `id` was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        notes:[
+          "`id` values correspond to file position inside the array returned by torrent contents API, e.g. `id=0` for first file, `id=1` for second file, etc.",
+          "Since 2.8.2 it is recommended to use `index` field returned by torrent contents API (since the files can be filtered and the `index` value may differ from the position inside the response array)."
+        ]
+      },
+      {
+        id:"torrents-downloadlimit", method:"POST", name:"downloadLimit", title:"获取种子下载限速",
+        desc:"获取一个或多个种子的下载限速。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回 JSON 对象，将种子哈希映射到其下载限速（bytes/second，未限速为 `0`）。",
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/downloadLimit HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0`},
+          {lang:"json", code:String.raw`{"8c212779b4abde7c6bc608063a0d008b7e40ce32": 338944, "284b83c9c7935002391129fd97f43db5d7cc2ba0": 123}`}
+        ]
+      },
+      {
+        id:"torrents-setdownloadlimit", method:"POST", name:"setDownloadLimit", title:"设置种子下载限速",
+        desc:"设置一个或多个种子的下载限速。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"limit", type:"integer", req:true, desc:"Download speed limit in bytes/second"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setDownloadLimit HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&limit=131072`}
+        ]
+      },
+      {
+        id:"torrents-setsharelimits", method:"POST", name:"setShareLimits", title:"设置种子分享限制",
+        desc:"设置一个或多个种子的分享率 / 做种时间限制。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"The hashes of the torrents for which you want to set the share limits, separated by `|` or `all`"},
+          {name:"ratioLimit", type:"float", req:false, desc:"Maximum seeding ratio. `-2` = global limit, `-1` = no limit"},
+          {name:"seedingTimeLimit", type:"integer", req:false, desc:"Maximum seeding time (minutes). `-2` = global limit, `-1` = no limit"},
+          {name:"inactiveSeedingTimeLimit", type:"integer", req:false, desc:"Maximum inactive seeding time (minutes). `-2` = global limit, `-1` = no limit"}
+        ],
+        returns:[
+          {code:200, cls:"ok", desc:"All other scenarios"},
+          {code:400, cls:"err", desc:"Bad Request, e.g. missing parameter"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setShareLimits HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&ratioLimit=1.0&seedingTimeLimit=60&inactiveSeedingTimeLimit=-2`}
+        ]
+      },
+      {
+        id:"torrents-uploadlimit", method:"POST", name:"uploadLimit", title:"获取种子上传限速",
+        desc:"获取一个或多个种子的上传限速。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        respText:"返回 JSON 对象，将种子哈希映射到其上传限速（bytes/second，未限速为 `0`）。",
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/uploadLimit HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0`},
+          {lang:"json", code:String.raw`{"8c212779b4abde7c6bc608063a0d008b7e40ce32": 338944, "284b83c9c7935002391129fd97f43db5d7cc2ba0": 123}`}
+        ]
+      },
+      {
+        id:"torrents-setuploadlimit", method:"POST", name:"setUploadLimit", title:"设置种子上传限速",
+        desc:"设置一个或多个种子的上传限速。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"limit", type:"integer", req:true, desc:"Upload speed limit in bytes/second"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setUploadLimit HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&limit=131072`}
+        ]
+      },
+      {
+        id:"torrents-setlocation", method:"POST", name:"setLocation", title:"设置种子保存位置",
+        desc:"移动一个或多个种子的下载位置。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"location", type:"string", req:true, desc:"Location to download the torrent to. If it doesn't exist, torrent's location is unchanged"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"Save path is empty"},
+          {code:403, cls:"err", desc:"User does not have write access to directory"},
+          {code:409, cls:"conflict", desc:"Unable to create save path directory"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setLocation HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&location=/mnt/nfs/media`}
+        ]
+      },
+      {
+        id:"torrents-rename", method:"POST", name:"rename", title:"重命名种子",
+        desc:"重命名指定种子。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"name", type:"string", req:true, desc:"The new name"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Torrent hash is invalid"},
+          {code:409, cls:"conflict", desc:"Torrent name is empty"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/rename HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hash=8c212779b4abde7c6bc608063a0d008b7e40ce32&name=This%20is%20a%20test`}
+        ]
+      },
+      {
+        id:"torrents-setcategory", method:"POST", name:"setCategory", title:"设置种子分类",
+        desc:"为一个或多个种子设置分类。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"category", type:"string", req:true, desc:"The torrent category to set"}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Category name does not exist"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setCategory HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&category=CategoryName`}
+        ]
+      },
+      {
+        id:"torrents-categories", method:"GET", name:"categories", title:"获取全部分类",
+        desc:"以 JSON 格式返回全部分类。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "Video": {
+        "name": "Video",
+        "savePath": "/home/user/torrents/video/"
+    },
+    "eBooks": {
+        "name": "eBooks",
+        "savePath": "/home/user/torrents/eBooks/"
+    }
+}`}
+        ]
+      },
+      {
+        id:"torrents-createcategory", method:"POST", name:"createCategory", title:"新建分类",
+        desc:"创建一个新的分类。",
+        params:[
+          {name:"category", type:"string", req:true, desc:"The category to create"},
+          {name:"savePath", type:"string", req:false, desc:"Save path for the category"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"Category name is empty"},
+          {code:409, cls:"conflict", desc:"Category name is invalid"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/createCategory HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+category=CategoryName&savePath=/path/to/dir`}
+        ]
+      },
+      {
+        id:"torrents-editcategory", method:"POST", name:"editCategory", title:"编辑分类",
+        desc:"编辑分类的保存路径。",
+        params:[
+          {name:"category", type:"string", req:true, desc:"The category to edit"},
+          {name:"savePath", type:"string", req:true, desc:"New save path"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"Category name is empty"},
+          {code:409, cls:"conflict", desc:"Category editing failed"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/editCategory HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+category=CategoryName&savePath=/path/to/save/torrents/to`}
+        ]
+      },
+      {
+        id:"torrents-removecategories", method:"POST", name:"removeCategories", title:"删除分类",
+        desc:"删除一个或多个分类。",
+        params:[
+          {name:"categories", type:"string", req:true, desc:"Categories to remove, separated by `\\n` (`%0A` URL-encoded)"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/removeCategories HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+categories=Category1%0ACategory2`}
+        ]
+      },
+      {
+        id:"torrents-addtags", method:"POST", name:"addTags", title:"添加标签",
+        desc:"为一个或多个种子添加标签。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"tags", type:"string", req:true, desc:"List of tags to add, comma-separated"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/addTags HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&tags=TagName1,TagName2`}
+        ]
+      },
+      {
+        id:"torrents-removetags", method:"POST", name:"removeTags", title:"移除标签",
+        desc:"从一个或多个种子移除标签。空列表将移除全部标签。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"tags", type:"string", req:true, desc:"List of tags to remove, comma-separated. Empty list removes all tags"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/removeTags HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&tags=TagName1,TagName2`}
+        ]
+      },
+      {
+        id:"torrents-tags", method:"GET", name:"tags", title:"获取全部标签",
+        desc:"以 JSON 格式返回全部标签。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"json", code:String.raw`["Tag 1", "Tag 2"]`}
+        ]
+      },
+      {
+        id:"torrents-createtags", method:"POST", name:"createTags", title:"创建标签",
+        desc:"创建标签，多个标签以逗号分隔。",
+        params:[
+          {name:"tags", type:"string", req:true, desc:"List of tags to create, comma-separated"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/createTags HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+tags=TagName1,TagName2`}
+        ]
+      },
+      {
+        id:"torrents-deletetags", method:"POST", name:"deleteTags", title:"删除标签",
+        desc:"删除标签，多个标签以逗号分隔。",
+        params:[
+          {name:"tags", type:"string", req:true, desc:"List of tags to delete, comma-separated"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/deleteTags HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+tags=TagName1,TagName2`}
+        ]
+      },
+      {
+        id:"torrents-setautomanagement", method:"POST", name:"setAutoManagement", title:"设置自动种子管理 (ATM)",
+        desc:"启用或禁用指定种子的自动种子管理。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"enable", type:"bool", req:false, desc:"Whether to enable ATM. Default: `false`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setAutoManagement HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32|284b83c9c7935002391129fd97f43db5d7cc2ba0&enable=true`}
+        ]
+      },
+      {
+        id:"torrents-togglesequentialdownload", method:"GET", name:"toggleSequentialDownload", title:"切换顺序下载",
+        desc:"切换一个或多个种子的顺序下载模式。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|`, or `all`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"torrents-togglefirstlastpieceprio", method:"GET", name:"toggleFirstLastPiecePrio", title:"切换首尾分片优先",
+        desc:"切换一个或多个种子的首/尾分片优先下载。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|`, or `all`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"torrents-setforcestart", method:"POST", name:"setForceStart", title:"设置强制开始",
+        desc:"启用或禁用指定种子的强制开始。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"value", type:"bool", req:false, desc:"Whether to enable force start. Default: `false`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setForceStart HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32&value=true`}
+        ]
+      },
+      {
+        id:"torrents-setsuperseeding", method:"POST", name:"setSuperSeeding", title:"设置超级做种",
+        desc:"启用或禁用指定种子的超级做种模式。",
+        params:[
+          {name:"hashes", type:"string", req:true, desc:"Hashes separated by `|` or `all`"},
+          {name:"value", type:"bool", req:false, desc:"Whether to enable super seeding. Default: `false`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"http", code:String.raw`POST /api/v2/torrents/setSuperSeeding HTTP/1.1
+User-Agent: Fiddler
+Host: 127.0.0.1
+Cookie: SID=your_sid
+Content-Type: application/x-www-form-urlencoded
+Content-Length: length
+
+hashes=8c212779b4abde7c6bc608063a0d008b7e40ce32&value=true`}
+        ]
+      },
+      {
+        id:"torrents-renamefile", method:"POST", name:"renameFile", title:"重命名文件",
+        desc:"重命名种子内的单个文件。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"oldPath", type:"string", req:true, desc:"The old path of the file"},
+          {name:"newPath", type:"string", req:true, desc:"The new path to use for the file"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"Missing `newPath` parameter"},
+          {code:409, cls:"conflict", desc:"Invalid `newPath` or `oldPath`, or `newPath` already in use"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"torrents-renamefolder", method:"POST", name:"renameFolder", title:"重命名文件夹",
+        desc:"重命名种子内的单个文件夹。",
+        params:[
+          {name:"hash", type:"string", req:true, desc:"The hash of the torrent"},
+          {name:"oldPath", type:"string", req:true, desc:"The old path of the folder"},
+          {name:"newPath", type:"string", req:true, desc:"The new path to use for the folder"}
+        ],
+        returns:[
+          {code:400, cls:"err", desc:"Missing `newPath` parameter"},
+          {code:409, cls:"conflict", desc:"Invalid `newPath` or `oldPath`, or `newPath` already in use"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      }
+    ]
+  },
+
+  /* ---------- RSS ---------- */
+  {
+    slug:"rss", title:"RSS（实验性）", en:"RSS (experimental)",
+    intro:"所有 RSS 接口位于 `rss` 分组下，例如 `/api/v2/rss/methodName`。该功能仍处于实验阶段。",
+    endpoints:[
+      {
+        id:"rss-addfolder", method:"POST", name:"addFolder", title:"添加文件夹",
+        desc:"在 RSS 订阅树中添加文件夹。",
+        params:[
+          {name:"path", type:"string", req:true, desc:`Full path of added folder (e.g. "The Pirate Bay\\Top100")`}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Failure to add folder"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"rss-addfeed", method:"POST", name:"addFeed", title:"添加订阅源",
+        desc:"添加 RSS 订阅源。",
+        params:[
+          {name:"url", type:"string", req:true, desc:"URL of RSS feed (e.g. `http://thepiratebay.org/rss//top100/200`)"},
+          {name:"path", type:"string", req:false, desc:`Full path of added folder (e.g. "The Pirate Bay\\Top100\\Video")`}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Failure to add feed"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"rss-removeitem", method:"POST", name:"removeItem", title:"移除项目",
+        desc:"移除文件夹或订阅源。",
+        params:[
+          {name:"path", type:"string", req:true, desc:`Full path of removed item (e.g. "The Pirate Bay\\Top100")`}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Failure to remove item"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"rss-moveitem", method:"POST", name:"moveItem", title:"移动项目",
+        desc:"移动 / 重命名文件夹或订阅源。",
+        params:[
+          {name:"itemPath", type:"string", req:true, desc:`Current full path of item (e.g. "The Pirate Bay\\Top100")`},
+          {name:"destPath", type:"string", req:true, desc:`New full path of item (e.g. "The Pirate Bay")`}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"Failure to move item"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"rss-items", method:"GET", name:"items", title:"获取全部订阅项目",
+        desc:"返回 RSS 订阅树中的所有项目。",
+        params:[
+          {name:"withData", type:"bool", req:false, desc:"True if you need current feed articles"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "HD-Torrents.org": "https://hd-torrents.org/rss.php",
+    "PowerfulJRE": "https://www.youtube.com/feeds/videos.xml?channel_id=UCzQUP1qoWDoEbmsQxvdjxgQ",
+    "The Pirate Bay": {
+        "Audio": "https://thepiratebay.org/rss//top100/100",
+        "Video": "https://thepiratebay.org/rss//top100/200"
+    }
+}`}
+        ]
+      },
+      {
+        id:"rss-markasread", method:"POST", name:"markAsRead", title:"标记已读",
+        desc:"如果提供了 `articleId`，则仅将该文章标记为已读，否则将整个订阅源标记为已读。",
+        params:[
+          {name:"itemPath", type:"string", req:true, desc:`Current full path of item (e.g. "The Pirate Bay\\Top100")`},
+          {name:"articleId", type:"string", req:false, desc:"ID of article"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"rss-refreshitem", method:"POST", name:"refreshItem", title:"刷新项目",
+        desc:"刷新文件夹或订阅源。",
+        params:[
+          {name:"itemPath", type:"string", req:true, desc:`Current full path of item (e.g. "The Pirate Bay\\Top100")`}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"rss-setrule", method:"POST", name:"setRule", title:"设置自动下载规则",
+        desc:"创建或更新 RSS 自动下载规则。",
+        params:[
+          {name:"ruleName", type:"string", req:true, desc:"Rule name (e.g. \"Punisher\")"},
+          {name:"ruleDef", type:"string", req:true, desc:"JSON encoded rule definition"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"enabled", type:"bool", desc:"Whether the rule is enabled"},
+          {name:"mustContain", type:"string", desc:"The substring that the torrent name must contain"},
+          {name:"mustNotContain", type:"string", desc:"The substring that the torrent name must not contain"},
+          {name:"useRegex", type:"bool", desc:"Enable regex mode in \"mustContain\" and \"mustNotContain\""},
+          {name:"episodeFilter", type:"string", desc:"Episode filter definition"},
+          {name:"smartFilter", type:"bool", desc:"Enable smart episode filter"},
+          {name:"previouslyMatchedEpisodes", type:"list", desc:"The list of episode IDs already matched by smart filter"},
+          {name:"affectedFeeds", type:"list", desc:"The feed URLs the rule applied to"},
+          {name:"ignoreDays", type:"number", desc:"Ignore subsequent rule matches"},
+          {name:"lastMatch", type:"string", desc:"The rule last match time"},
+          {name:"addPaused", type:"bool", desc:"Add matched torrent in paused mode"},
+          {name:"assignedCategory", type:"string", desc:"Assign category to the torrent"},
+          {name:"savePath", type:"string", desc:"Save torrent to the given directory"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "enabled": false,
+    "mustContain": "The *Punisher*",
+    "mustNotContain": "",
+    "useRegex": false,
+    "episodeFilter": "1x01-;",
+    "smartFilter": false,
+    "previouslyMatchedEpisodes": [
+    ],
+    "affectedFeeds": [
+        "http://showrss.info/user/134567.rss?magnets=true"
+    ],
+    "ignoreDays": 0,
+    "lastMatch": "20 Nov 2017 09:05:11",
+    "addPaused": true,
+    "assignedCategory": "",
+    "savePath": "C:/Users/JohnDoe/Downloads/Punisher"
+}`}
+        ]
+      },
+      {
+        id:"rss-renamerule", method:"POST", name:"renameRule", title:"重命名自动下载规则",
+        desc:"重命名 RSS 自动下载规则。",
+        params:[
+          {name:"ruleName", type:"string", req:true, desc:"Rule name (e.g. \"Punisher\")"},
+          {name:"newRuleName", type:"string", req:true, desc:"New rule name (e.g. \"The Punisher\")"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"rss-removerule", method:"POST", name:"removeRule", title:"删除自动下载规则",
+        desc:"删除 RSS 自动下载规则。",
+        params:[
+          {name:"ruleName", type:"string", req:true, desc:"Rule name (e.g. \"Punisher\")"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"rss-rules", method:"GET", name:"rules", title:"获取全部自动下载规则",
+        desc:"以 JSON 格式返回全部自动下载规则。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "The Punisher": {
+        "enabled": false,
+        "mustContain": "The *Punisher*",
+        "mustNotContain": "",
+        "useRegex": false,
+        "episodeFilter": "1x01-;",
+        "smartFilter": false,
+        "previouslyMatchedEpisodes": [
+        ],
+        "affectedFeeds": [
+            "http://showrss.info/user/134567.rss?magnets=true"
+        ],
+        "ignoreDays": 0,
+        "lastMatch": "20 Nov 2017 09:05:11",
+        "addPaused": true,
+        "assignedCategory": "",
+        "savePath": "C:/Users/JohnDoe/Downloads/Punisher"
+    }
+}`}
+        ]
+      },
+      {
+        id:"rss-matchingarticles", method:"GET", name:"matchingArticles", title:"获取匹配规则的文章",
+        desc:"按订阅源名称返回与规则匹配的全部文章。",
+        params:[
+          {name:"ruleName", type:"string", req:true, desc:"Rule name (e.g. \"Linux\")"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "DistroWatch": [
+        "sparkylinux-5.11-i686-minimalgui.iso.torrent",
+        "sparkylinux-5.11-x86_64-minimalgui.iso.torrent",
+        "sparkylinux-5.11-i686-xfce.iso.torrent",
+        "bluestar-linux-5.6.3-2020.04.09-x86_64.iso.torrent",
+        "robolinux64-mate3d-v10.10.iso.torrent"
+    ],
+    "Linuxtracker": [
+        "[Alpine Linux] alpine-extended-3.11.6",
+        "[Alpine Linux] alpine-standard-3.11.6",
+        "[Linuxfx] linuxfx10-wxs-lts-beta5.iso",
+        "[Linux Lite] linux-lite-5.0-rc1-64bit.iso (MULTI)",
+        "[Scientific Linux] SL-7.8-x86_64-Pack",
+        "[NixOS] nixos-plasma5-20.03.1418.5272327b81e-x86_64-linux.iso"
+    ]
+}`}
+        ]
+      }
+    ]
+  },
+
+  /* ---------- SEARCH ---------- */
+  {
+    slug:"search", title:"搜索", en:"Search",
+    intro:"所有搜索接口位于 `search` 分组下，例如 `/api/v2/search/methodName`。",
+    endpoints:[
+      {
+        id:"search-start", method:"POST", name:"start", title:"开始搜索",
+        desc:"使用指定的搜索插件开始搜索。",
+        params:[
+          {name:"pattern", type:"string", req:true, desc:"Pattern to search for (e.g. \"Ubuntu 18.04\")"},
+          {name:"plugins", type:"string", req:true, desc:"Plugins to use for searching (e.g. \"legittorrents\"). Supports multiple plugins separated by `|`. Also supports `all` and `enabled`"},
+          {name:"category", type:"string", req:false, desc:"Categories to limit your search to (e.g. \"legittorrents\"). Available categories depend on the specified `plugins`. Also supports `all`"}
+        ],
+        returns:[
+          {code:409, cls:"conflict", desc:"User has reached the limit of max `Running` searches (currently set to 5)"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"id", type:"number", desc:"ID of the search job"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`{
+    "id": 12345
+}`}
+        ]
+      },
+      {
+        id:"search-stop", method:"POST", name:"stop", title:"停止搜索",
+        desc:"停止指定的搜索任务。",
+        params:[
+          {name:"id", type:"number", req:true, desc:"ID of the search job"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Search job was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"search-status", method:"GET", name:"status", title:"获取搜索状态",
+        desc:"获取搜索任务的状态。不指定 `id` 时返回全部搜索任务。",
+        params:[
+          {name:"id", type:"number", req:false, desc:"ID of the search job. If not specified, all search jobs are returned"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Search job was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"id", type:"number", desc:"ID of the search job"},
+          {name:"status", type:"string", desc:"Current status of the search job (either `Running` or `Stopped`)"},
+          {name:"total", type:"number", desc:"Total number of results. If the status is `Running` this number may continue to increase"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[
+    {
+        "id": 12345,
+        "status": "Running",
+        "total": 170
+    }
+]`}
+        ]
+      },
+      {
+        id:"search-results", method:"GET", name:"results", title:"获取搜索结果",
+        desc:"获取指定搜索任务的结果，支持分页。",
+        params:[
+          {name:"id", type:"number", req:true, desc:"ID of the search job"},
+          {name:"limit", type:"number", req:false, desc:"Max number of results to return. 0 or negative means no limit"},
+          {name:"offset", type:"number", req:false, desc:"Result to start at. A negative number means count backwards (e.g. `-2` returns the 2 most recent results)"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Search job was not found"},
+          {code:409, cls:"conflict", desc:"Offset is too large, or too small (e.g. absolute value of negative number is greater than # results)"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ],
+        fields:[
+          {name:"results", type:"array", desc:"Array of `result` objects (see below)"},
+          {name:"status", type:"string", desc:"Current status of the search job (either `Running` or `Stopped`)"},
+          {name:"total", type:"number", desc:"Total number of results. If the status is `Running` this number may continue to increase"}
+        ],
+        extraFields:{title:"Result object fields", rows:[
+          {name:"descrLink", type:"string", desc:"URL of the torrent's description page"},
+          {name:"fileName", type:"string", desc:"Name of the file"},
+          {name:"fileSize", type:"number", desc:"Size of the file in Bytes"},
+          {name:"fileUrl", type:"string", desc:"Torrent download link (usually either .torrent file or magnet link)"},
+          {name:"nbLeechers", type:"number", desc:"Number of leechers"},
+          {name:"nbSeeders", type:"number", desc:"Number of seeders"},
+          {name:"siteUrl", type:"string", desc:"URL of the torrent site"}
+        ]},
+        examples:[
+          {lang:"json", code:String.raw`{
+    "results": [
+        {
+            "descrLink": "http://www.legittorrents.info/index.php?page=torrent-details&id=8d5f512e1acb687029b8d7cc6c5a84dce51d7a41",
+            "fileName": "Ubuntu-10.04-32bit-NeTV.ova",
+            "fileSize": -1,
+            "fileUrl": "http://www.legittorrents.info/download.php?id=8d5f512e1acb687029b8d7cc6c5a84dce51d7a41&f=Ubuntu-10.04-32bit-NeTV.ova.torrent",
+            "nbLeechers": 1,
+            "nbSeeders": 0,
+            "siteUrl": "http://www.legittorrents.info"
+        },
+        {
+            "descrLink": "http://www.legittorrents.info/index.php?page=torrent-details&id=d5179f53e105dc2c2401bcfaa0c2c4936a6aa475",
+            "fileName": "mangOH-Legato-17_06-Ubuntu-16_04.ova",
+            "fileSize": -1,
+            "fileUrl": "http://www.legittorrents.info/download.php?id=d5179f53e105dc2c2401bcfaa0c2c4936a6aa475&f=mangOH-Legato-17_06-Ubuntu-16_04.ova.torrent",
+            "nbLeechers": 0,
+            "nbSeeders": 59,
+            "siteUrl": "http://www.legittorrents.info"
+        }
+    ],
+    "status": "Running",
+    "total": 2
+}`}
+        ]
+      },
+      {
+        id:"search-delete", method:"POST", name:"delete", title:"删除搜索",
+        desc:"删除指定的搜索任务。",
+        params:[
+          {name:"id", type:"number", req:true, desc:"ID of the search job"}
+        ],
+        returns:[
+          {code:404, cls:"err", desc:"Search job was not found"},
+          {code:200, cls:"ok", desc:"All other scenarios"}
+        ]
+      },
+      {
+        id:"search-plugins", method:"GET", name:"plugins", title:"获取搜索插件",
+        desc:"返回已安装的搜索插件列表。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}],
+        fields:[
+          {name:"enabled", type:"bool", desc:"Whether the plugin is enabled"},
+          {name:"fullName", type:"string", desc:"Full name of the plugin"},
+          {name:"name", type:"string", desc:"Short name of the plugin"},
+          {name:"supportedCategories", type:"array", desc:"List of category objects"},
+          {name:"url", type:"string", desc:"URL of the torrent site"},
+          {name:"version", type:"string", desc:"Installed version of the plugin"}
+        ],
+        examples:[
+          {lang:"json", code:String.raw`[
+    {
+        "enabled": true,
+        "fullName": "Legit Torrents",
+        "name": "legittorrents",
+        "supportedCategories": [{
+            "id": "all",
+            "name": "All categories"
+        }, {
+            "id": "anime",
+            "name": "Anime"
+        }, {
+            "id": "books",
+            "name": "Books"
+        }, {
+            "id": "games",
+            "name": "Games"
+        }, {
+            "id": "movies",
+            "name": "Movies"
+        }, {
+            "id": "music",
+            "name": "Music"
+        }, {
+            "id": "tv",
+            "name": "TV shows"
+        }],
+        "url": "http://www.legittorrents.info",
+        "version": "2.3"
+    }
+]`}
+        ]
+      },
+      {
+        id:"search-installplugin", method:"POST", name:"installPlugin", title:"安装搜索插件",
+        desc:"通过 URL 或文件路径安装搜索插件。",
+        params:[
+          {name:"sources", type:"string", req:true, desc:"Url or file path of the plugin to install. Supports multiple sources separated by `|`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"search-uninstallplugin", method:"POST", name:"uninstallPlugin", title:"卸载搜索插件",
+        desc:"卸载一个或多个搜索插件。",
+        params:[
+          {name:"names", type:"string", req:true, desc:"Name of the plugin to uninstall. Supports multiple names separated by `|`"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"search-enableplugin", method:"POST", name:"enablePlugin", title:"启用/禁用搜索插件",
+        desc:"启用或禁用一个或多个搜索插件。",
+        params:[
+          {name:"names", type:"string", req:true, desc:"Name of the plugin to enable/disable. Supports multiple names separated by `|`"},
+          {name:"enable", type:"bool", req:true, desc:"Whether the plugins should be enabled"}
+        ],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      },
+      {
+        id:"search-updateplugins", method:"GET", name:"updatePlugins", title:"更新搜索插件",
+        desc:"检查并更新全部搜索插件。",
+        params:[],
+        returns:[{code:200, cls:"ok", desc:"All scenarios"}]
+      }
+    ]
+  }
+];
+
+/* ============================ 渲染与交互 ============================ */
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function inlineCode(s){ return s.replace(/`([^`]+)`/g, '<code>$1</code>'); }
+
+function highlight(code, lang){
+  if(lang === 'json'){
+    const re = /("(?:\\.|[^"\\])*")(\s*:)?|-?\d+(?:\.\d+)?|\b(true|false)\b|\b(null)\b/g;
+    const out = [];
+    let last = 0, m;
+    while((m = re.exec(code))){
+      if(m.index > last) out.push(['p', code.slice(last, m.index)]);
+      if(m[1] !== undefined){
+        out.push(m[2] !== undefined ? ['k', m[1]] : ['s', m[1]]);
+        if(m[2] !== undefined) out.push(['p', m[2]]);
+      } else if(m[3] !== undefined) out.push(['n', m[3]]);
+      else if(m[4] !== undefined) out.push(['b', m[4]]);
+      else if(m[5] !== undefined) out.push(['x', m[5]]);
+      last = re.lastIndex;
+    }
+    if(last < code.length) out.push(['p', code.slice(last)]);
+    const cls = {k:'tok-key', s:'tok-str', n:'tok-num', b:'tok-bool', x:'tok-null', p:'tok-punct'};
+    return out.map(([t, s]) => `<span class="${cls[t]}">${esc(s)}</span>`).join('');
+  }
+  if(lang === 'bash'){
+    return esc(code)
+      .replace(/^(\$\s+)/gm, '<span class="tok-cmd">$1</span>')
+      .replace(/ (--[a-zA-Z-]+)/g, ' <span class="tok-flag">$1</span>');
+  }
+  return esc(code);
+}
+
+function table(rows, headers){
+  let h = '<table class="tbl"><thead><tr>' + headers.map(x => `<th>${esc(x)}</th>`).join('') + '</tr></thead><tbody>';
+  for(const r of rows) h += '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>';
+  return h + '</tbody></table>';
+}
+
+function endpointHTML(ep, group){
+  const path = `/api/v2/${group.slug}/${ep.name}`;
+  let h = `<article class="ep" id="${ep.id}">`;
+  h += `<header class="ep-head">
+    <span class="method ${ep.method.toLowerCase()}">${ep.method}</span>
+    <code class="ep-path">${esc(path)}</code>
+    <span class="spacer"></span>
+    <button class="icon-btn copy-path" data-copy="${esc(path)}" title="复制接口地址">⧉</button>
+    <button class="icon-btn copy-url" data-copy="${esc(location.origin + location.pathname + '#' + ep.id)}" title="复制本页锚点链接">🔗</button>
+  </header><div class="ep-body">`;
+  h += `<h3 class="ep-title">${esc(ep.title)} <span class="name-pill">${esc(ep.name)}</span></h3>`;
+  if(ep.desc) h += `<p class="ep-desc">${inlineCode(esc(ep.desc))}</p>`;
+
+  /* 请求参数 */
+  if(ep.params && ep.params.length){
+    h += `<div class="block"><div class="block-tag">请求参数 Parameters</div>`;
+    h += table(ep.params.map(p => [
+      `<code>${esc(p.name)}</code>` + (p.since ? `<span class="since-tag">since ${esc(p.since)}</span>` : ''),
+      `<span class="type-pill">${esc(p.type)}</span>`,
+      p.req ? '<span style="color:var(--get);font-size:12px;font-weight:600">必填</span>' : '<span class="opt-tag">可选</span>',
+      inlineCode(esc(p.desc))
+    ]), ['参数', '类型', '必填', '说明']);
+    h += `</div>`;
+  } else if(ep.params){
+    h += `<div class="block"><div class="block-tag">请求参数 Parameters</div><span class="no-param">无参数 None</span></div>`;
+  }
+
+  /* 响应状态码 */
+  if(ep.returns && ep.returns.length){
+    h += `<div class="block"><div class="block-tag">响应状态码 Status Codes</div><div class="chips">`;
+    for(const r of ep.returns){
+      h += `<span class="chip ${r.cls || 'blue'}"><b>${esc(String(r.code))}</b>${esc(r.desc)}</span>`;
+    }
+    h += `</div></div>`;
+  }
+
+  /* 返回值说明 */
+  if(ep.respText){
+    h += `<div class="block"><div class="block-tag">返回值 Response</div><p class="resp-text">${inlineCode(esc(ep.respText))}</p></div>`;
+  }
+
+  /* 返回字段 */
+  if(ep.fields && ep.fields.length){
+    const rows = ep.fields.map(f => [
+      `<code>${esc(f.name)}</code>` + (f.since ? `<span class="since-tag">since ${esc(f.since)}</span>` : ''),
+      `<span class="type-pill">${esc(f.type)}</span>`,
+      inlineCode(esc(f.desc))
+    ]);
+    const title = ep.fieldsTitle || '返回字段 Response Fields';
+    if(ep.fieldsCollapsed){
+      h += `<details class="collapse"><summary><span class="arrow">›</span>${esc(title)} <span class="cnt">${rows.length} 项</span></summary><div class="inner">${table(rows, ['字段','类型','说明'])}</div></details>`;
+    } else {
+      h += `<div class="block"><div class="block-tag">${esc(title)}</div>${table(rows, ['字段','类型','说明'])}</div>`;
+    }
+  }
+  if(ep.extraFields && ep.extraFields.rows && ep.extraFields.rows.length){
+    h += `<div class="block"><div class="block-tag">${esc(ep.extraFields.title)}</div>` +
+      table(ep.extraFields.rows.map(f => [
+        `<code>${esc(f.name)}</code>`,
+        `<span class="type-pill">${esc(f.type)}</span>`,
+        inlineCode(esc(f.desc))
+      ]), ['字段','类型','说明']) + `</div>`;
+  }
+
+  /* 枚举表 */
+  if(ep.enums && ep.enums.length){
+    for(const e of ep.enums){
+      h += `<div class="block"><div class="block-tag">${esc(e.title)}</div>`;
+      h += table(e.rows.map(r => [`<code>${esc(r.v)}</code>`, esc(r.d)]), ['值', '说明']);
+      h += `</div>`;
+    }
+  }
+
+  /* 示例 */
+  if(ep.examples && ep.examples.length){
+    h += `<div class="block"><div class="block-tag">示例 Examples</div>`;
+    for(const ex of ep.examples){
+      h += `<div class="code-wrap"><div class="code-bar"><span class="dots"><i></i><i></i><i></i></span><span class="lang">${esc(ex.lang)}</span><span class="spacer"></span><button class="icon-btn copy-path" data-copy="${esc(ex.code)}" title="复制代码">⧉</button></div><pre class="code">${highlight(ex.code, ex.lang)}</pre></div>`;
+    }
+    h += `</div>`;
+  }
+
+  /* 备注 */
+  if(ep.notes && ep.notes.length){
+    h += `<div class="notes"><ul>` + ep.notes.map(n => `<li>${inlineCode(esc(n))}</li>`).join('') + `</ul></div>`;
+  }
+
+  h += `</div></article>`;
+  return h;
+}
+
+function sectionHTML(sec, idx){
+  let h = `<section class="section" id="sec-${sec.slug}">`;
+  h += `<div class="sec-head"><span class="num">${String(idx + 1).padStart(2, '0')}</span><h3>${esc(sec.title)} <span class="en">${esc(sec.en)}</span></h3></div>`;
+  if(sec.intro) h += `<p class="sec-intro">${inlineCode(esc(sec.intro))}</p>`;
+  for(const ep of sec.endpoints) h += endpointHTML(ep, sec);
+  h += `</section>`;
+  return h;
+}
+
+function navHTML(){
+  let h = '';
+  for(const sec of DOC){
+    h += `<details class="nav-group" open><summary>${esc(sec.title)} <span class="cnt">${sec.endpoints.length}</span><span class="caret">›</span></summary><div class="nav-items">`;
+    for(const ep of sec.endpoints){
+      h += `<a class="nav-item" href="#${ep.id}" data-target="${ep.id}"><span class="m ${ep.method.toLowerCase()}"></span><span class="nm">${esc(ep.name)}</span></a>`;
+    }
+    h += `</div></details>`;
+  }
+  return h;
+}
+
+function generalHTML(){
+  return `<section class="section" id="sec-overview">
+    <div class="sec-head"><span class="num">00</span><h3>总览 <span class="en">General Information</span></h3></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px">
+      <div class="stat"><b>/api/v2</b><span>所有接口的基础路径格式：/api/v2/APIName/methodName</span></div>
+      <div class="stat"><b>GET · POST</b><span>仅允许这两种方法。变更状态或请求过大时用 POST；v4.4.4 起错误方法返回 405</span></div>
+      <div class="stat"><b>SID Cookie</b><span>基于 Cookie 的认证。除 /api/v2/auth/login 外，所有接口均需认证</span></div>
+      <div class="stat"><b>v5.0+</b><span>本文档适用于 qBittorrent v5.0+，WebAPI 版本 2.11.x</span></div>
+    </div>
+    <div class="block" style="margin-top:22px"><div class="block-tag">版本变更 Changes</div>
+    <div class="ep" style="margin:0"><div class="ep-body">
+      <h3 class="ep-title">API v2.9.3</h3>
+      <ul style="list-style:none;color:var(--dim);font-size:14px">
+        <li>· 在 <code style="font-family:var(--mono);color:var(--accent2)">/torrents/info</code> 响应中新增 <code style="font-family:var(--mono);color:var(--accent2)">reannounce</code> 字段（<a href="https://github.com/qbittorrent/qBittorrent/pull/19571" target="_blank" rel="noopener" style="color:var(--accent)">#19571</a>）</li>
+      </ul>
+      <h3 class="ep-title" style="margin-top:16px">API v2.11.3</h3>
+      <ul style="list-style:none;color:var(--dim);font-size:14px">
+        <li>· 新增管理 Cookies 的 API（<a href="https://github.com/qbittorrent/qBittorrent/pull/21340" target="_blank" rel="noopener" style="color:var(--accent)">#21340</a>）</li>
+        <li>· 从 <code style="font-family:var(--mono);color:var(--accent2)">/torrents/add</code> 请求中移除了 <code style="font-family:var(--mono);color:var(--accent2)">cookie</code> 字段</li>
+      </ul>
+    </div></div></div>
+  </section>`;
+}
+
+function versionHTML(){
+  return `<section class="section" id="sec-versioning">
+    <div class="sec-head"><span class="num">尾</span><h3>WebAPI 版本号 <span class="en">WebAPI Versioning</span></h3></div>
+    <p class="sec-intro">WebAPI 使用 <code>1.2.3</code> 形式的三段式版本号，规则如下：</p>
+    <div style="display:grid;gap:12px">
+      <div class="ep" style="margin:0"><div class="ep-body"><h3 class="ep-title">1 · 主版本</h3><p class="ep-desc">Should be changed only on some global changes (e.g. total redesign/relayout)。仅在发生全局性变更（如整体重新设计 / 布局调整）时变更。</p></div></div>
+      <div class="ep" style="margin:0"><div class="ep-body"><h3 class="ep-title">2 · 次版本</h3><p class="ep-desc">Changed on incompatible API changes (i.e. if it breaks outdated clients), e.g. if you change/remove something。发生不兼容的 API 变更（会破坏旧客户端，如修改 / 删除内容）时变更。</p></div></div>
+      <div class="ep" style="margin:0"><div class="ep-body"><h3 class="ep-title">3 · 修订号</h3><p class="ep-desc">Changed on compatible API changes (i.e. if it doesn't break outdated clients), e.g. if you add something new outdated clients still can access old subset of API。发生兼容性变更（不影响旧客户端）时变更，例如新增内容，旧客户端仍可访问原有 API。</p></div></div>
+    </div>
+  </section>`;
+}
+
+/* ---------- 初始化渲染 ---------- */
+(function init(){
+  const total = DOC.reduce((a, s) => a + s.endpoints.length, 0);
+  const nGet = DOC.reduce((a, s) => a + s.endpoints.filter(e => e.method === 'GET').length, 0);
+  const nPost = DOC.reduce((a, s) => a + s.endpoints.filter(e => e.method === 'POST').length, 0);
+  $('#stats').innerHTML =
+    `<div class="stat"><b>${total}</b><span>API 接口</span></div>` +
+    `<div class="stat"><b>${DOC.length}</b><span>功能分组</span></div>` +
+    `<div class="stat"><b>${nGet}</b><span>GET</span></div>` +
+    `<div class="stat"><b>${nPost}</b><span>POST</span></div>`;
+  $('#nav').innerHTML = navHTML();
+  $('#content').innerHTML = generalHTML() + DOC.map(sectionHTML).join('') + versionHTML();
+
+  /* 搜索 */
+  const searchInput = $('#search');
+  const runSearch = () => {
+    const q = searchInput.value.trim().toLowerCase();
+    let count = 0;
+    for(const item of $$('.nav-item')){
+      const ep = document.getElementById(item.dataset.target);
+      const hay = ((ep ? ep.textContent : '') + ' ' + item.dataset.target + ' ' + item.textContent).toLowerCase();
+      const ok = !q || hay.includes(q);
+      item.classList.toggle('hide', !ok);
+      if(ep) ep.classList.toggle('hide', !ok);
+      if(ok) count++;
+    }
+    for(const g of $$('.nav-group')){
+      const vis = $$('.nav-item', g).some(i => !i.classList.contains('hide'));
+      g.classList.toggle('hide', !vis);
+    }
+    $('#searchMeta').textContent = q ? `找到 ${count} 个匹配接口` : '';
+    $('#empty').classList.toggle('show', count === 0 && !!q);
+  };
+  searchInput.addEventListener('input', runSearch);
+  searchInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){
+      const first = $$('.nav-item').find(i => !i.classList.contains('hide'));
+      if(first) first.click();
+    }
+    if(e.key === 'Escape'){
+      searchInput.value = ''; runSearch(); searchInput.blur();
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)){
+      e.preventDefault(); searchInput.focus();
+    }
+  });
+
+  /* 滚动高亮 (scrollspy) */
+  const spy = new IntersectionObserver(entries => {
+    for(const entry of entries){
+      if(entry.isIntersecting){
+        const id = entry.target.id;
+        $$('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.target === id));
+        history.replaceState(null, '', '#' + id);
+      }
+    }
+  }, {rootMargin: '-15% 0px -70% 0px'});
+  $$('.ep').forEach(ep => spy.observe(ep));
+
+  /* 导航点击：高亮卡片 + 移动端收起 */
+  $('#nav').addEventListener('click', e => {
+    const a = e.target.closest('.nav-item');
+    if(!a) return;
+    setTimeout(() => {
+      const el = document.getElementById(a.dataset.target);
+      if(el){ el.classList.add('active-card'); setTimeout(() => el.classList.remove('active-card'), 900); }
+    }, 80);
+    closeSidebar();
+  });
+
+  /* 复制 */
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.copy-path, .copy-url');
+    if(!btn) return;
+    copyText(btn.getAttribute('data-copy')).then(() => toast('已复制 ✓'));
+  });
+
+  /* 顶部进度条 & 回到顶部 */
+  window.addEventListener('scroll', () => {
+    const st = document.documentElement.scrollTop;
+    const h = document.documentElement.scrollHeight - innerHeight;
+    $('#progress').style.width = (st / h * 100) + '%';
+    $('#toTop').classList.toggle('show', st > 600);
+  }, {passive: true});
+  $('#toTop').addEventListener('click', () => scrollTo({top: 0, behavior: 'smooth'}));
+
+  /* 移动端侧栏 */
+  const sidebar = $('#sidebar'), overlay = $('#overlay');
+  function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  window.closeSidebar = closeSidebar;
+  $('#hamburger').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+  overlay.addEventListener('click', closeSidebar);
+
+  /* 深链跳转 */
+  if(location.hash){
+    const t = document.querySelector(location.hash);
+    if(t) setTimeout(() => t.scrollIntoView({behavior: 'smooth'}), 80);
+  }
+})();
+
+function copyText(t){
+  if(navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(t);
+  }
+  return new Promise((res, rej) => {
+    const ta = document.createElement('textarea');
+    ta.value = t;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); res(); } catch(err){ rej(err); }
+    ta.remove();
+  });
+}
+
+let _toastTimer;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+</script>
+</body>
+</html>

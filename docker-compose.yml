@@ -1,0 +1,28 @@
+# 镜像方案：直接拉取 GHCR 预构建镜像（CI 自动构建，amd64/arm64 双架构），无需本地构建与 Go/Node 环境。
+# 镜像 tag 由环境变量 ANT_TORRENT_TAG 控制，默认 latest；锁定版本：export ANT_TORRENT_TAG=1.0.0
+# （或写入同目录 .env 文件，compose 会自动读取）。
+# 源码构建（开发场景）：docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+# 项目名默认取目录名（ant-torrent）；刻意不写顶层 name: 字段以兼容旧版 docker-compose v1。
+services:
+  backend:
+    image: ghcr.io/ant-torrent/backend:${ANT_TORRENT_TAG:-latest}
+    container_name: ant-torrent-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      TZ: Asia/Shanghai
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  webui:
+    image: ghcr.io/ant-torrent/web:${ANT_TORRENT_TAG:-latest}
+    container_name: ant-torrent-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8000:80"

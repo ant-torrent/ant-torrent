@@ -1,0 +1,6 @@
+# Runtime data (contains passwords)
+data/
+
+# Build output
+*.exe
+/tmp/

@@ -1,0 +1,11 @@
+.idea
+.claude
+.codegraph
+node_modules/
+.DS_Store
+
+# 前端构建产物
+frontend/dist/
+
+# Docker 部署运行时数据（含 qB 凭据与 agentToken，严禁提交）
+data/
