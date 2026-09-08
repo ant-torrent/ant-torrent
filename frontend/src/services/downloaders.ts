@@ -35,14 +35,23 @@ export type Feature =
   | 'addRatioLimit' // 添加时设置分享率（tr 添加后经 torrent-set 下发）
   | 'addSeedingTimeLimit' // 添加时设置做种时长限制（tr 闲置做种语义不同，不提供）
 
-const QBT_FEATURES: Feature[] = [
-  'categories', 'tagRegistry', 'tags', 'forceStart', 'forceStartToggle', 'detail', 'rss',
-  'sessionPrefs', 'shareLimits', 'filePriority', 'autoTMM', 'location', 'rename',
+// as const：字面量入集合，供底部编译期穷举守卫比对（Feature[] 注解会拓宽类型使守卫失效）
+const QBT_FEATURES = [
+  'categories', 'tagRegistry', 'tags', 'forceStart', 'forceStartToggle', 'detail', 'trackersEdit',
+  'rss', 'sessionPrefs', 'shareLimits', 'filePriority', 'autoTMM', 'location', 'rename',
   'skipChecking', 'rootFolder', 'sequentialDownload', 'firstLastPiecePrio', 'superSeeding',
   'speedLimitsToggle', 'addRatioLimit', 'addSeedingTimeLimit',
-]
+] as const
 
-const TR_FEATURES: Feature[] = ['tags', 'forceStart', 'sequentialDownload', 'detail', 'addRatioLimit']
+const TR_FEATURES = ['tags', 'forceStart', 'sequentialDownload', 'detail', 'addRatioLimit'] as const
+
+// 编译期守卫：Feature 联合类型新增成员时若忘记登记进任何一份能力清单，
+// Exclude 结果不再为 never，此处立即编译失败（trackersEdit 曾因此漏登记，
+// 导致 qB 的 Tracker 管理按钮全部不可见）
+type UnregisteredFeature = Exclude<Feature, (typeof QBT_FEATURES)[number] | (typeof TR_FEATURES)[number]>
+// T extends never 约束：UnregisteredFeature 非 never 时编译失败
+type AssertNever<T extends never> = T
+export type _AssertAllFeaturesRegistered = AssertNever<UnregisteredFeature>
 
 const CAPS: Record<DownloaderType, ReadonlySet<Feature>> = {
   qbittorrent: new Set(QBT_FEATURES),
