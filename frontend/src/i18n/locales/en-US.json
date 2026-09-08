@@ -476,7 +476,8 @@
         "webui": "Web UI",
         "advanced": "Advanced",
         "categories": "Categories",
-        "tags": "Tags"
+        "tags": "Tags",
+        "logs": "Logs"
       },
       "serverList": "Servers",
       "addServer": "Add Server",
@@ -682,6 +683,20 @@
         "empty": "No tags",
         "createFailed": "Failed to create tags",
         "deleteFailed": "Failed to delete tag"
+      },
+      "logs": {
+        "colTime": "Time",
+        "colLevel": "Level",
+        "colMessage": "Message",
+        "level": {
+          "normal": "Normal",
+          "info": "Info",
+          "warning": "Warning",
+          "critical": "Critical"
+        },
+        "autoRefresh": "Auto refresh",
+        "refresh": "Refresh",
+        "empty": "No log entries"
       }
     },
     "app": {

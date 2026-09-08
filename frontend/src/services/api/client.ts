@@ -83,6 +83,15 @@ export interface QbtCategory {
   savePath: string
 }
 
+/** qBittorrent 主日志条目（/api/v2/log/main）。type: 1 普通 2 信息 3 警告 4 严重 */
+export interface QbtLogEntry {
+  id: number
+  /** epoch 秒 */
+  timestamp: number
+  type: number
+  message: string
+}
+
 /** 添加种子参数（对应 qBittorrent /api/v2/torrents/add） */
 export interface AddTorrentParams {
   /** 换行分隔的 magnet/http 链接 */
@@ -445,6 +454,19 @@ export const qbtApi = {
       method: 'DELETE',
       body: JSON.stringify({ tags }),
     })
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* 日志（qBittorrent 原生 /log/main，经通用代理转发）                 */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * 获取主日志（时间正序）。lastKnownId 传上次最大 id 时仅返回增量，
+   * 供轮询使用；缺省返回 qB 缓冲内的全部日志。
+   */
+  getLogs(serverId: string, lastKnownId?: number): Promise<QbtLogEntry[]> {
+    const qs = lastKnownId === undefined ? '' : `?last_known_id=${lastKnownId}`
+    return request(`/servers/${serverId}/qbt/v2/log/main${qs}`)
   },
 }
 

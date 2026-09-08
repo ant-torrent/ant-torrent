@@ -59,3 +59,9 @@ export function formatDateTime(epochSeconds: number): string {
   if (!epochSeconds || epochSeconds < 0) return '-'
   return dayjs.unix(epochSeconds).format('YYYY-MM-DD HH:mm')
 }
+
+/** 秒数 → 含秒的时间（日志等需要秒级精度的场景） */
+export function formatDateTimeSec(epochSeconds: number): string {
+  if (!epochSeconds || epochSeconds < 0) return '-'
+  return dayjs.unix(epochSeconds).format('YYYY-MM-DD HH:mm:ss')
+}

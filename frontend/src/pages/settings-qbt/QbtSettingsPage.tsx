@@ -10,6 +10,7 @@ import BehaviorTab from './tabs/BehaviorTab'
 import DownloadsTab from './tabs/DownloadsTab'
 import CategoriesTab from './tabs/CategoriesTab'
 import TagsTab from './tabs/TagsTab'
+import LogsTab from './tabs/LogsTab'
 import SpeedTab from './tabs/SpeedTab'
 import BitTorrentTab from './tabs/BitTorrentTab'
 import WebUiTab from './tabs/WebUiTab'
@@ -140,6 +141,8 @@ function ServerSettingsPanel({ server }: { server: ServerConfig }) {
     { key: 'advanced', label: t('settings.qbt.tabs.advanced'), children: tabContent(<AdvancedTab />, 'advanced'), forceRender: true },
     { key: 'categories', label: t('settings.qbt.tabs.categories'), children: tabContent(<CategoriesTab />) },
     { key: 'tags', label: t('settings.qbt.tabs.tags'), children: tabContent(<TagsTab />) },
+    // 日志为只读查看页，不参与表单保存/重置；不受 720px 限宽，供表格占满可用宽度
+    { key: 'logs', label: t('settings.qbt.tabs.logs'), children: <div style={{ paddingTop: 16 }}><LogsTab /></div> },
   ]
 
   return (

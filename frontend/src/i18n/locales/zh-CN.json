@@ -476,7 +476,8 @@
         "webui": "Web UI",
         "advanced": "高级",
         "categories": "分类",
-        "tags": "标签"
+        "tags": "标签",
+        "logs": "日志"
       },
       "serverList": "服务器列表",
       "addServer": "添加服务器",
@@ -682,6 +683,20 @@
         "empty": "暂无标签",
         "createFailed": "创建标签失败",
         "deleteFailed": "删除标签失败"
+      },
+      "logs": {
+        "colTime": "时间",
+        "colLevel": "级别",
+        "colMessage": "内容",
+        "level": {
+          "normal": "普通",
+          "info": "信息",
+          "warning": "警告",
+          "critical": "严重"
+        },
+        "autoRefresh": "自动刷新",
+        "refresh": "刷新",
+        "empty": "暂无日志"
       }
     },
     "app": {
