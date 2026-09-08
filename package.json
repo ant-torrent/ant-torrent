@@ -1,7 +1,7 @@
 {
   "name": "ant-torrent",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c blue,green \"cd backend && go run .\" \"pnpm --dir frontend dev\"",
     "dev:backend": "cd backend && go run .",
