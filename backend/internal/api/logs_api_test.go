@@ -36,7 +36,7 @@ func newLogsRouter(t *testing.T) (*gin.Engine, *logging.Manager, *logbuf.LogBuf,
 	buf := logbuf.New(logbuf.DefaultCap)
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(buf, settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(),
+	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	return r, logMgr, buf, loginSession(t, r)
 }

@@ -704,6 +704,7 @@
       "tabs": {
         "appearance": "外观",
         "ai": "AI 助手",
+        "telegram": "Telegram",
         "account": "账号",
         "logs": "日志",
         "about": "关于"
@@ -785,6 +786,28 @@
           "hint": "每台服务器一个 JSON：顶层键为名称，stdio 填 command / args / env，HTTP 填 url / headers，\"enabled\": false 可暂时停用；已保存的密钥值显示为 \"__SAVED__\"，保持原样即沿用已存值。"
         },
         "mcpInvalid": "MCP 配置 JSON 无效，请先修正后再保存"
+      },
+      "telegram": {
+        "enable": "启用 Telegram bot",
+        "enableHint": "保存后立即生效（自动启停长轮询），无需重启服务",
+        "token": "Bot Token",
+        "tokenPlaceholder": "123456:ABC-DEF…（来自 @BotFather）",
+        "tokenMasked": "已保存，留空保持不变",
+        "tokenSavedHint": "Token 只保存在后端；留空沿用已保存的值",
+        "clearToken": "清除已保存的 Token",
+        "tokenRequired": "启用 Telegram bot 时必须填写 Bot Token",
+        "allowedUserIds": "用户白名单",
+        "allowedUserIdsPlaceholder": "输入数字用户 ID 后回车",
+        "allowedUserIdsHint": "仅白名单内的用户可使用 bot；未授权用户给 bot 发消息即可获知自己的数字 ID",
+        "proxyUrl": "代理地址",
+        "proxyUrlHint": "可选。后端访问 api.telegram.org 走的代理，支持 http/https/socks5",
+        "language": "bot 语言",
+        "test": "测试连接",
+        "testOk": "连接成功：{{name}}",
+        "testFailed": "连接失败",
+        "statusRunning": "运行中",
+        "statusStopped": "已停止",
+        "statusError": "异常"
       },
       "about": {
         "links": "链接",

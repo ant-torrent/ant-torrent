@@ -1,8 +1,11 @@
 package qbt
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"sort"
@@ -44,27 +47,9 @@ func (m *ClientManager) ensureSID(serverID string, conn Conn) error {
 	return m.login(serverID, conn)
 }
 
-// doRequest 执行对 qBittorrent 的 API 请求：自动附带 SID，403 时重登录并重试一次。
-// path 形如 "torrents/categories"，form 为 nil 时发送 GET。
-func (m *ClientManager) doRequest(serverID string, conn Conn, method, path string, form url.Values) ([]byte, int, error) {
-	targetURL := strings.TrimRight(conn.BaseURL, "/") + "/api/v2/" + path
-
-	do := func() (*http.Response, error) {
-		var body io.Reader
-		if form != nil {
-			body = strings.NewReader(form.Encode())
-		}
-		req, err := http.NewRequest(method, targetURL, body)
-		if err != nil {
-			return nil, err
-		}
-		if form != nil {
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		}
-		req.Header.Set("Referer", conn.BaseURL)
-		return m.DoRequest(serverID, req)
-	}
-
+// doWithRetry 执行一次请求：ensureSID → 首次执行 → 403（会话过期）时重登录并重试一次。
+// 网络错误统一映射为 unreachable。do 闭包须可重复调用（每次重建请求体）。
+func (m *ClientManager) doWithRetry(serverID string, conn Conn, do func() (*http.Response, error)) ([]byte, int, error) {
 	if err := m.ensureSID(serverID, conn); err != nil {
 		return nil, 0, err
 	}
@@ -93,6 +78,30 @@ func (m *ClientManager) doRequest(serverID string, conn Conn, method, path strin
 		return nil, resp.StatusCode, &APIError{Status: http.StatusBadGateway, Code: "parseError"}
 	}
 	return body, resp.StatusCode, nil
+}
+
+// doRequest 执行对 qBittorrent 的 API 请求：自动附带 SID，403 时重登录并重试一次。
+// path 形如 "torrents/categories"，form 为 nil 时发送 GET。
+func (m *ClientManager) doRequest(serverID string, conn Conn, method, path string, form url.Values) ([]byte, int, error) {
+	targetURL := strings.TrimRight(conn.BaseURL, "/") + "/api/v2/" + path
+
+	do := func() (*http.Response, error) {
+		var body io.Reader
+		if form != nil {
+			body = strings.NewReader(form.Encode())
+		}
+		req, err := http.NewRequest(method, targetURL, body)
+		if err != nil {
+			return nil, err
+		}
+		if form != nil {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		}
+		req.Header.Set("Referer", conn.BaseURL)
+		return m.DoRequest(serverID, req)
+	}
+
+	return m.doWithRetry(serverID, conn, do)
 }
 
 // callForm 执行写操作并把 qBittorrent 的非 200 状态映射为带错误码的 APIError。
@@ -263,6 +272,70 @@ func (m *ClientManager) AddTorrents(serverID string, conn Conn, urls, category, 
 		form.Set("paused", "true")
 	}
 	return m.callForm(serverID, conn, "torrents/add", form, "addTorrentFailed", "")
+}
+
+// AddTorrentFiles 以 .torrent 文件内容添加种子：multipart 字段 torrents（与前端
+// 上传及 qBittorrent torrents/add 契约一致），category/savePath 为空时省略。
+// qB 对业务失败仍返回 200 + "Fails."，此处一并识别为 addTorrentFailed。
+func (m *ClientManager) AddTorrentFiles(serverID string, conn Conn, files [][]byte, category, savePath string, paused bool) error {
+	do := func() (*http.Response, error) {
+		buf := &bytes.Buffer{}
+		w := multipart.NewWriter(buf)
+		for i, data := range files {
+			fw, err := w.CreateFormFile("torrents", fmt.Sprintf("torrent%d.torrent", i))
+			if err != nil {
+				return nil, err
+			}
+			if _, err := fw.Write(data); err != nil {
+				return nil, err
+			}
+		}
+		fields := url.Values{}
+		if savePath != "" {
+			fields.Set("savepath", savePath)
+		}
+		if category != "" {
+			fields.Set("category", category)
+		}
+		if paused {
+			fields.Set("paused", "true")
+		}
+		for k, vs := range fields {
+			for _, v := range vs {
+				if err := w.WriteField(k, v); err != nil {
+					return nil, err
+				}
+			}
+		}
+		if err := w.Close(); err != nil {
+			return nil, err
+		}
+
+		targetURL := strings.TrimRight(conn.BaseURL, "/") + "/api/v2/torrents/add"
+		req, err := http.NewRequest(http.MethodPost, targetURL, buf)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", w.FormDataContentType())
+		req.Header.Set("Referer", conn.BaseURL)
+		return m.DoRequest(serverID, req)
+	}
+
+	body, status, err := m.doWithRetry(serverID, conn, do)
+	if err != nil {
+		return err
+	}
+	if status == http.StatusOK {
+		// qB 业务失败（种子无效等）HTTP 仍为 200，靠响应体区分
+		if strings.TrimSpace(string(body)) == "Fails." {
+			return &APIError{Status: status, Code: "addTorrentFailed"}
+		}
+		return nil
+	}
+	if status == http.StatusBadRequest {
+		return &APIError{Status: status, Code: "addTorrentFailed"}
+	}
+	return &APIError{Status: http.StatusBadGateway, Code: "qbError", Args: []any{status}}
 }
 
 // StopTorrents 暂停种子（qB v5 torrents/stop，404 时回退 v4 torrents/pause）。

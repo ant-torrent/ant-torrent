@@ -14,6 +14,7 @@ import (
 	"ant-torrent/backend/internal/logging"
 	"ant-torrent/backend/internal/qbt"
 	"ant-torrent/backend/internal/settings"
+	"ant-torrent/backend/internal/telegram"
 	"ant-torrent/backend/internal/transmission"
 
 	"github.com/gin-gonic/gin"
@@ -54,7 +55,12 @@ func runServer() {
 
 	aiSvc := ai.NewService(settingsStore, store, qbtMgr)
 
-	r := api.SetupRouter(store, qbtMgr, trMgr, agentMgr, aiSvc, authStore, logMgr, settingsStore)
+	// telegram bot：按 settings.json 的 telegram 段对齐运行状态（enabled 时
+	// 后台拉起长轮询；无优雅停机，跟随进程存亡），保存配置后热启停。
+	tgMgr := telegram.NewManager(settingsStore, store, qbtMgr, trMgr)
+
+	r := api.SetupRouter(store, qbtMgr, trMgr, agentMgr, tgMgr, aiSvc, authStore, logMgr, settingsStore)
+	tgMgr.Reconcile(settingsStore.TelegramConfig())
 
 	slog.Info("AntTorrent backend starting", "addr", ":8080")
 	if err := r.Run(":8080"); err != nil {

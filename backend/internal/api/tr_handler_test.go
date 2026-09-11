@@ -39,7 +39,7 @@ func newDualRouter(t *testing.T) (*gin.Engine, string, string, string) {
 	settingsStore := settings.NewStore(filepath.Join(dir, settings.FileName))
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(),
+	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	return r, qbID, trID, loginSession(t, r)
 }
@@ -88,7 +88,7 @@ func TestLiveTrRouterSnapshot(t *testing.T) {
 	}
 	settingsStore := settings.NewStore(filepath.Join(dir, settings.FileName))
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), transmission.NewManager(), agent.NewManager(),
+	r := SetupRouter(store, qbt.NewClientManager(), transmission.NewManager(), agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	session := loginSession(t, r)
 

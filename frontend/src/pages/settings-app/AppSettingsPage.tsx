@@ -6,6 +6,7 @@ import { useAppStore, type ThemeMode, type AccentKey, type Locale } from '@/stor
 import { ACCENTS } from '@/theme/tokens'
 import { version as appVersion } from '../../../package.json'
 import AiTab from './AiTab'
+import TelegramTab from './TelegramTab'
 import AccountTab from './AccountTab'
 import LogsTab from './LogsTab'
 
@@ -109,7 +110,7 @@ function AboutTab() {
 }
 
 /** 合法 tab key（同时用于 ?tab= 深链校验，如头像菜单跳 ?tab=account 改密码） */
-const TAB_KEYS = ['appearance', 'ai', 'account', 'logs', 'about']
+const TAB_KEYS = ['appearance', 'ai', 'telegram', 'account', 'logs', 'about']
 
 export default function AppSettingsPage() {
   const { t } = useTranslation()
@@ -124,6 +125,7 @@ export default function AppSettingsPage() {
   const tabItems = [
     { key: 'appearance', label: t('settings.app.tabs.appearance'), children: <div style={formBox}><AppearanceTab /></div> },
     { key: 'ai', label: t('settings.app.tabs.ai'), children: <div style={formBox}><AiTab /></div> },
+    { key: 'telegram', label: t('settings.app.tabs.telegram'), children: <div style={formBox}><TelegramTab /></div> },
     { key: 'account', label: t('settings.app.tabs.account'), children: <div style={formBox}><AccountTab /></div> },
     { key: 'logs', label: t('settings.app.tabs.logs'), children: <LogsTab /> },
     { key: 'about', label: t('settings.app.tabs.about'), children: <div style={formBox}><AboutTab /></div> },

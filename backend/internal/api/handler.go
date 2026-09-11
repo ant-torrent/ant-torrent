@@ -14,6 +14,7 @@ import (
 	"ant-torrent/backend/internal/logging"
 	"ant-torrent/backend/internal/qbt"
 	"ant-torrent/backend/internal/settings"
+	"ant-torrent/backend/internal/telegram"
 	"ant-torrent/backend/internal/transmission"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,7 @@ import (
 // 其余全部业务路由经 authMiddleware 保护——豁免清单以路由表形式可审计。
 // 日志：gin.New + 自定义访问日志中间件（slog，可经 settings.json 实时开关），
 // 替代 gin.Default 自带的 Logger；Recovery 保留，panic 栈经 DefaultErrorWriter 落缓冲。
-func SetupRouter(store *config.Store, qbtMgr *qbt.ClientManager, trMgr *transmission.Manager, agentMgr *agent.Manager, aiSvc *ai.Service, authStore *auth.Store, logMgr *logging.Manager, settingsStore *settings.Store) *gin.Engine {
+func SetupRouter(store *config.Store, qbtMgr *qbt.ClientManager, trMgr *transmission.Manager, agentMgr *agent.Manager, tgMgr *telegram.Manager, aiSvc *ai.Service, authStore *auth.Store, logMgr *logging.Manager, settingsStore *settings.Store) *gin.Engine {
 	r := gin.New()
 	r.Use(corsMiddleware())
 	r.Use(langMiddleware())
@@ -79,6 +80,11 @@ func SetupRouter(store *config.Store, qbtMgr *qbt.ClientManager, trMgr *transmis
 		protected.GET("/ai/status", getAiStatus(aiSvc))
 		protected.POST("/ai/chat", chatWithAi(aiSvc))
 		protected.POST("/ai/mcp/test", testMcpServer(aiSvc))
+
+		// Telegram bot
+		protected.GET("/telegram/config", getTelegramConfig(settingsStore, tgMgr))
+		protected.PUT("/telegram/config", updateTelegramConfig(settingsStore, tgMgr))
+		protected.POST("/telegram/test", testTelegram(settingsStore, tgMgr))
 
 		// Server management
 		protected.GET("/servers", listServers(store))

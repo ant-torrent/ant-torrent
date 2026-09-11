@@ -41,7 +41,7 @@ func newProxyTestRouter(t *testing.T, qbHandler http.HandlerFunc) (*gin.Engine, 
 	settingsStore := settings.NewStore(filepath.Join(dir, "settings.json"))
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(),
+	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	return r, serverID, loginSession(t, r)
 }

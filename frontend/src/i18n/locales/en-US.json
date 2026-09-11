@@ -704,6 +704,7 @@
       "tabs": {
         "appearance": "Appearance",
         "ai": "AI Assistant",
+        "telegram": "Telegram",
         "account": "Account",
         "logs": "Logs",
         "about": "About"
@@ -785,6 +786,28 @@
           "hint": "One JSON object per server: the top-level key is the name; stdio uses command / args / env, HTTP uses url / headers; \"enabled\": false pauses a server. Stored secret values appear as \"__SAVED__\" — leave them as-is to keep the saved values."
         },
         "mcpInvalid": "The MCP JSON is invalid — fix it before saving"
+      },
+      "telegram": {
+        "enable": "Enable Telegram bot",
+        "enableHint": "Takes effect on save (polling starts/stops automatically) — no restart needed",
+        "token": "Bot Token",
+        "tokenPlaceholder": "123456:ABC-DEF… (from @BotFather)",
+        "tokenMasked": "Saved — leave empty to keep",
+        "tokenSavedHint": "The token is stored in the backend only; leaving empty keeps the saved value",
+        "clearToken": "Clear saved token",
+        "tokenRequired": "Bot token is required when the Telegram bot is enabled",
+        "allowedUserIds": "User whitelist",
+        "allowedUserIdsPlaceholder": "Type a numeric user ID and press Enter",
+        "allowedUserIdsHint": "Only whitelisted users can use the bot; an unauthorized user can message the bot to learn their numeric ID",
+        "proxyUrl": "Proxy URL",
+        "proxyUrlHint": "Optional. Proxy used by the backend to reach api.telegram.org; http/https/socks5 supported",
+        "language": "Bot language",
+        "test": "Test connection",
+        "testOk": "Connected: {{name}}",
+        "testFailed": "Connection failed",
+        "statusRunning": "Running",
+        "statusStopped": "Stopped",
+        "statusError": "Error"
       },
       "about": {
         "links": "Links",

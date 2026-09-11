@@ -36,7 +36,7 @@ func newAuthTestRouter(t *testing.T) *gin.Engine {
 	settingsStore := settings.NewStore(filepath.Join(dir, "settings.json"))
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	return SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(),
+	return SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 }
 
@@ -53,7 +53,7 @@ func newUnsetupTestRouter(t *testing.T) *gin.Engine {
 	settingsStore := settings.NewStore(filepath.Join(dir, "settings.json"))
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	return SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(),
+	return SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 }
 
@@ -276,7 +276,7 @@ func TestCLIResetKicksSessions(t *testing.T) {
 	settingsStore := settings.NewStore(filepath.Join(dir, "settings.json"))
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(),
+	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil,
 		ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	session := loginSession(t, r)
 

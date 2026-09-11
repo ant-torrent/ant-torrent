@@ -7,6 +7,7 @@
 - 支持连接多个 BT 客户端，目前支持 qBittorrent, Transmission
 - 通过 Agent 支持浏览 BT 客户端所在机器的目录
 - 支持配置 OpenAI, Anthropic 协议的 AI 助手 _[实验性功能]_
+- 内置 Telegram bot，远程把磁力链接 / 种子文件添加到指定服务器 _[实验性功能]_
 
 ## 常规功能
 

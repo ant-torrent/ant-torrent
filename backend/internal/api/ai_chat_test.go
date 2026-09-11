@@ -83,7 +83,7 @@ func newChatTestRouter(t *testing.T, llmScript string) (*gin.Engine, string) {
 	}
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
+	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil, ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	return r, loginSession(t, r)
 }
 
@@ -124,7 +124,7 @@ func TestChatSSEUnconfigured(t *testing.T) {
 	}
 	trMgr := transmission.NewManager()
 	logMgr := logging.New(logbuf.New(logbuf.DefaultCap), settingsStore.Log())
-	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
+	r := SetupRouter(store, qbt.NewClientManager(), trMgr, agent.NewManager(), nil, ai.NewService(settingsStore, store, qbt.NewClientManager()), authStore, logMgr, settingsStore)
 	session := loginSession(t, r)
 
 	resp := httptest.NewRecorder()

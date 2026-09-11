@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"ant-torrent/backend/internal/ai"
+	"ant-torrent/backend/internal/telegram"
 )
 
 func TestDefaultsWhenFileAbsent(t *testing.T) {
@@ -104,6 +105,30 @@ func TestSaveAIConfigRoundTrip(t *testing.T) {
 	got := s.AIConfig()
 	if len(got.MCPServers) != 1 || got.MCPServers[0].ID != "mcp-1" || got.APIKey != "k" {
 		t.Fatalf("AI 配置往返不一致: %+v", got)
+	}
+}
+
+func TestSaveTelegramConfigRoundTrip(t *testing.T) {
+	s := NewStore(filepath.Join(t.TempDir(), FileName))
+	if s.TelegramConfig().Configured() {
+		t.Error("缺省 Telegram 配置应为未启用")
+	}
+	want := telegram.Config{Enabled: true, BotToken: "tok", AllowedUserIDs: []int64{1, 2},
+		ProxyURL: "socks5://127.0.0.1:1080", Language: "en-US"}
+	if err := s.SaveTelegramConfig(want); err != nil {
+		t.Fatal(err)
+	}
+	got := s.TelegramConfig()
+	if !got.Configured() || got.BotToken != "tok" || len(got.AllowedUserIDs) != 2 || got.Language != "en-US" {
+		t.Fatalf("Telegram 配置往返不一致: %+v", got)
+	}
+	if reloaded := NewStore(s.path).TelegramConfig(); !reloaded.Configured() || len(reloaded.AllowedUserIDs) != 2 {
+		t.Fatalf("重载后应一致: %+v", reloaded)
+	}
+	// Clone 深拷贝：修改副本不得影响存储值
+	got.AllowedUserIDs[0] = 999
+	if s.TelegramConfig().AllowedUserIDs[0] != 1 {
+		t.Error("TelegramConfig 应返回独立副本")
 	}
 }
 

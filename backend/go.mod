@@ -4,9 +4,11 @@ go 1.26
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/go-telegram/bot v1.25.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	golang.org/x/crypto v0.23.0
+	golang.org/x/net v0.25.0
 )
 
 require (
@@ -34,7 +36,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect

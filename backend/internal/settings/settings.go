@@ -1,8 +1,8 @@
-// Package settings 统一管理 data/settings.json：应用级配置（日志 + AI 助手）。
+// Package settings 统一管理 data/settings.json：应用级配置（日志 + AI 助手 + Telegram bot）。
 //
 // 文件结构（v2，含 log 段）：
 //
-//	{"log": {"level": "info", "format": "text", "accessLog": true}, "ai": {...}}
+//	{"log": {"level": "info", "format": "text", "accessLog": true}, "ai": {...}, "telegram": {...}}
 //
 // 兼容 v1（历史版本根对象即 AIConfig，无任何包裹段）：加载时识别并按旧格式
 // 读取，下次保存自然迁移为新结构。
@@ -15,6 +15,7 @@ import (
 
 	"ant-torrent/backend/internal/ai"
 	"ant-torrent/backend/internal/jsonfile"
+	"ant-torrent/backend/internal/telegram"
 )
 
 // FileName 为配置文件名，位于服务端数据目录（相对进程 CWD 的 ./data/）。
@@ -40,8 +41,9 @@ func DefaultLogConfig() LogConfig {
 
 // Config 为 settings.json 的落盘结构。
 type Config struct {
-	Log LogConfig   `json:"log"`
-	AI  ai.AIConfig `json:"ai"`
+	Log      LogConfig       `json:"log"`
+	AI       ai.AIConfig     `json:"ai"`
+	Telegram telegram.Config `json:"telegram"`
 }
 
 // Store 管理 settings.json 的加载与保存。
@@ -90,6 +92,21 @@ func (s *Store) SaveAIConfig(cfg ai.AIConfig) error {
 	return s.persistLocked()
 }
 
+// TelegramConfig 返回 Telegram bot 配置副本。
+func (s *Store) TelegramConfig() telegram.Config {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cfg.Telegram.Clone()
+}
+
+// SaveTelegramConfig 保存 Telegram bot 配置。
+func (s *Store) SaveTelegramConfig(cfg telegram.Config) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.cfg.Telegram = cfg.Clone()
+	return s.persistLocked()
+}
+
 // load 读取磁盘；容忍损坏文件（保留默认值，首次保存时覆盖）。
 func (s *Store) load() {
 	data, err := os.ReadFile(s.path)
@@ -115,6 +132,9 @@ func (s *Store) load() {
 				s.cfg.Log.AccessLog = true
 			}
 		}
+	}
+	if tgRaw, ok := raw["telegram"]; ok {
+		_ = json.Unmarshal(tgRaw, &s.cfg.Telegram)
 	}
 	s.cfg.Log = normalizeLog(s.cfg.Log)
 }
