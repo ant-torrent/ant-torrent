@@ -9,7 +9,8 @@ services:
     container_name: ant-torrent-backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      # 宿主机端口可经 ANT_TORRENT_PORT 调整（如与 qB WebUI / 其他服务冲突时）；容器内固定 8080
+      - "${ANT_TORRENT_PORT:-8080}:8080"
     volumes:
       - ./data:/app/data
     environment:

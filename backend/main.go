@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"strconv"
+	"strings"
 
 	"ant-torrent/backend/internal/agent"
 	"ant-torrent/backend/internal/ai"
@@ -26,6 +29,24 @@ func main() {
 		os.Exit(runSubcommand(os.Args[1], os.Args[2:]))
 	}
 	runServer()
+}
+
+// defaultPort 为后端默认监听端口（与 qB WebUI 默认端口相同）。
+const defaultPort = "8080"
+
+// listenAddr 解析监听地址：环境变量 ANT_TORRENT_PORT 覆盖，缺省 :8080。
+// 端口属部署层配置（容器 / 服务管理器注入），不进 settings.json；
+// 非法取值直接拒绝启动——静默回退默认端口会让人「设了却没生效」。
+func listenAddr() (string, error) {
+	port := strings.TrimSpace(os.Getenv("ANT_TORRENT_PORT"))
+	if port == "" {
+		port = defaultPort
+	}
+	n, err := strconv.Atoi(port)
+	if err != nil || n < 1 || n > 65535 {
+		return "", fmt.Errorf("ANT_TORRENT_PORT=%q 不是合法端口（1-65535）", port)
+	}
+	return ":" + port, nil
 }
 
 func runServer() {
@@ -62,8 +83,13 @@ func runServer() {
 	r := api.SetupRouter(store, qbtMgr, trMgr, agentMgr, tgMgr, aiSvc, authStore, logMgr, settingsStore)
 	tgMgr.Reconcile(settingsStore.TelegramConfig())
 
-	slog.Info("AntTorrent backend starting", "addr", ":8080")
-	if err := r.Run(":8080"); err != nil {
+	addr, err := listenAddr()
+	if err != nil {
+		slog.Error("监听地址无效", "err", err)
+		os.Exit(1)
+	}
+	slog.Info("AntTorrent backend starting", "addr", addr)
+	if err := r.Run(addr); err != nil {
 		slog.Error("server error", "err", err)
 		os.Exit(1)
 	}

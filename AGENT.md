@@ -15,7 +15,7 @@ AntTorrent：自托管的多 qBittorrent 管理器（Web 界面）。Go 后端�
 
 ## 架构不变量（改动前必读）
 
-- **端口**：后端 `:8080` 硬编码（与 qB WebUI 默认端口相同）；Vite dev 固定 `:5273`（strictPort）；生产 nginx `:8000`。
+- **端口**：后端默认 `:8080`（与 qB WebUI 默认端口相同），可经环境变量 `ANT_TORRENT_PORT` 覆盖——Vite dev 代理（`vite.config.ts`）与 compose 宿主机端口映射读同一变量；容器内固定 8080（nginx `proxy_pass http://backend:8080` 不受影响）。Vite dev 固定 `:5273`（strictPort）；生产 nginx `:8000`。
 - **数据目录**：后端以**进程启动时的工作目录**为基准读写 `./data/`（servers.json + settings.json + auth.json）。换启动目录 = 换数据文件。
 - **账号认证**：除豁免路由 `/api/healthz`、`/api/agent/ws`（agent 自带 Bearer 认证）、`/api/auth/*` 外，**所有 `/api/*` 必须登录**（authMiddleware，HttpOnly cookie `ant_session`）。新增业务路由一律挂 `SetupRouter` 的受保护组。会话为 HMAC 无状态 token：epoch 不匹配即 401（改密码 / `ant-torrent reset-password` 时 +1 踢全部会话）；滑动续期只延长过期时间、**绝不 bump epoch**。
 - **auth.json 损坏即拒绝启动**：`auth.NewStore` 仅「文件不存在」视为未设置账号；文件存在但解析失败必须 Fatal——回退「未设置」等于允许破坏文件重设账号接管。运行中服务端按 mtime+size 热重载 auth.json（CLI 重置密码无需重启）。

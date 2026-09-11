@@ -193,7 +193,15 @@ docker build -f Dockerfile.node -t ant-torrent/backend:node .
 
 ### 端口冲突
 
-qB WebUI 已占用宿主机 8080 时，修改 `docker-compose.yml`：
+qB WebUI（或其他服务）已占用宿主机 8080 时，两种改法任选：
+
+其一，改 `.env` / 环境变量（推荐，`docker-compose.yml` 的宿主机端口映射已读该变量）：
+
+```bash
+echo 'ANT_TORRENT_PORT=18080' >> .env   # 宿主机 18080 → 容器内 8080
+```
+
+其二，直接修改 `docker-compose.yml` 的映射：
 
 ```yaml
     ports:
@@ -213,12 +221,12 @@ Go module 位于 **`backend/` 目录**（`module ant-torrent/backend`，backend 
 ```bash
 cd backend
 go build -o ant-torrent .
-./ant-torrent    # 监听 :8080
+./ant-torrent    # 监听 :8080（可用环境变量 ANT_TORRENT_PORT 覆盖）
 ```
 
 > 仓库根目录已无 go.mod，`go run ./backend` / `go build ./backend` 不再可用；Go 命令一律在 `backend/` 内执行。
 
-> ⚠️ **关键**：程序以**当前工作目录**为基准读写 `data/servers.json`、`data/settings.json`，监听端口 `:8080` 硬编码（无环境变量可改）。必须用启动目录 / `WorkingDirectory` 控制数据文件位置。
+> ⚠️ **关键**：程序以**当前工作目录**为基准读写 `data/servers.json`、`data/settings.json`。必须用启动目录 / `WorkingDirectory` 控制数据文件位置。监听端口默认 `:8080`，可经环境变量 `ANT_TORRENT_PORT` 覆盖（如 systemd 中在 `[Service]` 段加 `Environment=ANT_TORRENT_PORT=18080`）。
 
 systemd 服务示例（Linux）：
 
@@ -272,6 +280,8 @@ npm run dev      # 同时拉起 Go 后端 :8080 与 Vite 前端 :5273，Ctrl+C �
                  # 也可只起一边：npm run dev:backend / npm run dev:frontend
 ```
 
+后端端口被占用时：`ANT_TORRENT_PORT=18080 npm run dev`（Go 后端与 Vite 代理读同一变量，一步切换）。
+
 或分别用两个终端：
 
 ```bash
@@ -281,6 +291,8 @@ cd backend && go run main.go        # :8080
 # 前端（终端 2）
 cd frontend && pnpm dev             # :5273，Vite 已代理 /qbt-api → 127.0.0.1:8080
 ```
+
+（分开启动时若改了后端端口，前端侧同样带上 `ANT_TORRENT_PORT`。）
 
 ## Agent（ant-agent）安装
 
@@ -323,7 +335,7 @@ ant-agent 是部署在 **qBittorrent 所在机器**上的轻量代理：主动�
 ## 常见问题（FAQ）
 
 **端口被占用 / 与 qBittorrent WebUI 8080 冲突**
-改 compose 端口映射（如 `"18080:8080"`），agent 的 `backendUrl` 同步修改。见[端口冲突](#端口冲突)。
+Docker 部署：设置 `ANT_TORRENT_PORT=18080`（或改 compose 端口映射如 `"18080:8080"`）。源码运行：`ANT_TORRENT_PORT=18080 ./ant-torrent`。agent 的 `backendUrl` 同步修改。见[端口冲突](#端口冲突)。
 
 **AI 对话没有流式输出（一次性全部吐出或超时）**
 反向代理未关闭缓冲。确认 nginx 配置里有 `proxy_buffering off`、`gzip_proxied off`（本项目 `frontend/nginx.conf` 已内置）。
