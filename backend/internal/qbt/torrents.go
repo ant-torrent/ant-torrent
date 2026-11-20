@@ -34,7 +34,10 @@ func (m *ClientManager) login(serverID string, conn Conn) error {
 		return &APIError{Status: http.StatusBadGateway, Code: "unreachable", Args: []any{err.Error()}}
 	}
 	if !result.Success {
-		return &APIError{Status: http.StatusUnauthorized, Code: "loginFailed"}
+		// 上游 qB 登录失败（凭据错误/不可达/IP 封禁）一律 502：401 是 AntTorrent
+		// 会话失效的专属语义，挪用会导致轮询把用户踢回登录页（与 /qbt/* 代理
+		// 路径的翻译约定一致，见 api/handler.go）
+		return &APIError{Status: http.StatusBadGateway, Code: "loginFailed"}
 	}
 	return nil
 }
